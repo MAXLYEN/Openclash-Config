@@ -178,6 +178,35 @@ def check_online(path):
             elif level == 'WARN': warn(f, '%s -> %s' % (u.rsplit('/', 1)[-1], msg))
 
 
+def check_dist_sync():
+    """检查 dist/ 是否与 cfg/ 同步。
+
+    dist/ 是产物，任何人手改 dist/ 或忘了跑构建，都会让正式引用的配置
+    与源文件不一致，而且不会有任何提示。这里用与 build_ini.py 相同的剥离
+    规则重算一遍，逐字节比对。"""
+    DIST = os.path.join(ROOT, 'dist')
+    if not os.path.isdir(DIST):
+        warn('dist', 'dist/ 目录不存在，尚未构建')
+        return
+    for n in sorted(f for f in os.listdir(SRC) if f.endswith('.ini')):
+        dist_path = os.path.join(DIST, n)
+        if not os.path.exists(dist_path):
+            err('dist/' + n, '产物缺失，需要运行 scripts/build_ini.py')
+            continue
+        raw = open(os.path.join(SRC, n), 'rb').read()
+        if raw.startswith(b'\xef\xbb\xbf'):
+            raw = raw[3:]
+        text = raw.decode('utf-8').replace('\r\n', '\n').replace('\r', '\n')
+        expect = [l.rstrip() for l in text.split('\n')]
+        expect = [l for l in expect if l and not l.strip().startswith((';', '#', '//'))]
+        actual = open(dist_path, encoding='utf-8').read().split('\n')
+        actual = [l for l in actual if l]
+        if expect != actual:
+            d = next((i for i, (a, b) in enumerate(zip(expect, actual)) if a != b), min(len(expect), len(actual)))
+            err('dist/' + n, '与 cfg/%s 不同步（第 %d 行起有差异）。'
+                             '不要手改 dist/，运行 scripts/build_ini.py 重新生成' % (n, d + 1))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--online', action='store_true', help='额外拉取所有 provider 校验 payload 结构')
@@ -190,6 +219,8 @@ def main():
         if a.online:
             check_online(p)
         print('%-32s %3d ruleset / %3d group' % (n, nr, ng))
+
+    check_dist_sync()
 
     if warns:
         print('\n告警 %d 条：' % len(warns))

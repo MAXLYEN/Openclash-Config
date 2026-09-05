@@ -57,7 +57,10 @@ def read_normalized(path):
 
 
 def write_if_changed(path, content):
-    if os.path.exists(path) and open(path, encoding='utf-8').read() == content:
+    # 必须按字节比较。以文本模式读取会触发 Python 的 universal newlines,
+    # 把磁盘上的 CRLF 读成 LF, 于是 CRLF 源文件与 LF 规范化结果被判为"相同",
+    # 规范化永远不会落盘。
+    if os.path.exists(path) and open(path, 'rb').read() == content.encode('utf-8'):
         return False
     os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, 'w', encoding='utf-8', newline='\n').write(content)
