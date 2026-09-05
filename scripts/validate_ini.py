@@ -10,7 +10,7 @@
 不认识任何具体分组名，纯结构检查，v2/v3/vN 通用。
 带 --online 时额外做网络检查（拉取每个 ruleset 产物，验证 payload 结构）。
 """
-import os, re, sys, argparse, urllib.request, concurrent.futures
+import os, re, sys, time, argparse, urllib.request, concurrent.futures
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'cfg')
@@ -159,18 +159,40 @@ def check_online(path):
         u = line.split('clash-classic:', 1)[1].rsplit(',', 1)[0]
         urls.append(u)
 
+    def fetch(u):
+        # 用浏览器 UA：部分 CDN（jsdelivr 走 Cloudflare）对陌生 UA 会返回
+        # 挑战页而不是文件，状态码仍是 200，正文里自然没有 payload:
+        req = urllib.request.Request(u, headers={
+            'User-Agent': 'Mozilla/5.0 (compatible; openclash-config-validator/1.1)',
+            'Accept': 'text/plain,*/*',
+        })
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return r.status, r.headers.get('Content-Type', ''), r.read(8192).decode('utf-8', 'replace')
+
     def probe(u):
-        try:
-            req = urllib.request.Request(u, headers={'User-Agent': 'ini-validator/1.0'})
-            with urllib.request.urlopen(req, timeout=20) as r:
-                head = r.read(4096).decode('utf-8', 'replace')
-        except Exception as e:
-            return u, 'ERROR', '拉取失败：%s' % e
-        if 'payload:' not in head:
-            return u, 'ERROR', '不是 classical provider 结构（缺 payload:），provider 会加载为 0 条规则'
-        if re.search(r'payload:\s*\[\s*\]', head):
-            return u, 'WARN', 'payload 为空，这一行在规则链上不做任何匹配'
-        return u, None, None
+        last = None
+        for attempt in range(3):          # CDN 偶发抖动重试两次，避免误报
+            try:
+                status, ctype, head = fetch(u)
+            except Exception as e:
+                last = '拉取失败：%s' % e
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            if 'payload:' in head:
+                if re.search(r'payload:\s*\[\s*\]', head):
+                    # 规则文件 header 里写明了为什么是空的，就不再重复告警。
+                    # 想消掉这条告警，在对应 .list 的 header 里写上"占位"或"刻意留空"。
+                    if '占位' in head or '刻意留空' in head:
+                        return u, None, None
+                    return u, 'WARN', 'payload 为空，且规则文件 header 未说明原因'
+                return u, None, None
+            # 拿到了内容但没有 payload:，把实到的东西一并报出来，否则无法判断
+            # 是文件真错了，还是 CDN 返回了别的东西
+            snippet = head[:80].replace('\n', ' ⏎ ').strip()
+            last = ('不是 classical provider 结构（缺 payload:），provider 会加载为 0 条规则。'
+                    'HTTP %s / Content-Type: %s / 正文开头: %r' % (status, ctype or '(无)', snippet))
+            time.sleep(1.5 * (attempt + 1))
+        return u, 'ERROR', last
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
         for u, level, msg in ex.map(probe, sorted(set(urls))):
