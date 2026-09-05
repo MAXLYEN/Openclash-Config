@@ -1,0 +1,61 @@
+name: Build config
+
+# 仅在手动维护的 cfg/ 变化时触发。
+# 产物提交到 dist/，该路径不在触发范围内，不会循环触发。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cfg/**'
+      - 'scripts/**'
+      - '.github/workflows/build-ini.yml'
+  workflow_dispatch:
+  schedule:
+    # 每周一 03:00 UTC 跑一次联网校验：规则库那边删文件或改结构时，
+    # 配置这边不会有任何 push，只能靠定时任务发现
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-config
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 校验在构建之前：结构有错就不要产出，避免把坏配置推到 dist/
+      - name: 校验配置结构
+        run: python3 scripts/validate_ini.py
+
+      - name: 规范化 cfg 并生成 dist
+        run: python3 scripts/build_ini.py
+
+      - name: 联网校验规则源
+        # push 触发时也跑，但失败不阻断提交 —— 规则源不可达是对方仓库的问题，
+        # 不应该卡住本仓库的配置发布
+        continue-on-error: true
+        run: python3 scripts/validate_ini.py --online
+
+      - name: 提交产物
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add cfg dist
+          if git diff --cached --quiet; then
+            echo "无变化，跳过提交"
+            exit 0
+          fi
+          COUNT=$(git diff --cached --name-only | wc -l)
+          git commit -m "chore: 重新生成配置产物（${COUNT} 个文件）" -m "来源提交 ${GITHUB_SHA::7}"
+          git push
