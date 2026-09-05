@@ -31,12 +31,12 @@ https://testingcf.jsdelivr.net/gh/MAXLYEN/Openclash-Config@main/dist/Custom_Clas
 
 ## 目录结构
 
-| 目录       | 说明                                               |
-| ---------- | -------------------------------------------------- |
-| `cfg/`     | 配置源文件，**手动维护**，带完整注释，是唯一数据源 |
-| `dist/`    | 构建产物，**自动生成**，零注释，正式引用地址       |
-| `docs/`    | 设计约定、架构说明与排查记录                       |
-| `scripts/` | 构建与校验脚本                                     |
+| 目录 | 说明 |
+|---|---|
+| `cfg/` | 配置源文件，**手动维护**，带完整注释，是唯一数据源 |
+| `dist/` | 构建产物，**自动生成**，零注释，正式引用地址 |
+| `docs/` | 设计约定、架构说明与排查记录 |
+| `scripts/` | 构建与校验脚本 |
 
 `cfg/` 与 `dist/` 的关系等同于 [Openclash-Rule](https://github.com/MAXLYEN/Openclash-Rule) 里 `rules/list/` 与 `rules/yaml/` 的关系：前者人写，后者机器生成，**不要直接编辑 `dist/`**。
 
@@ -59,15 +59,15 @@ Layer 2  平台组（select）      Netflix / ChatGPT / Cryptocurrency / Steam /
 
 地区意图：
 
-| 锚点              | 承载内容                                 |
-| ----------------- | ---------------------------------------- |
-| `Proxy`           | 香港，通用与低延迟场景                   |
-| `USNet`           | 美国，流媒体与 AI                        |
-| `SGNet`           | 新加坡，亚洲金融与虚拟币                 |
-| `JPNet`           | 日本，含无专用节点地区的挂靠（如菲律宾） |
-| `UKNet`           | 英国，仅本地服务                         |
-| `EUNet`           | 欧洲                                     |
-| `AUNet` / `BRNet` | 大洋洲 / 南美                            |
+| 锚点 | 承载内容 |
+|---|---|
+| `Proxy` | 香港，通用与低延迟场景 |
+| `USNet` | 美国，流媒体与 AI |
+| `SGNet` | 新加坡，亚洲金融与虚拟币 |
+| `JPNet` | 日本，含无专用节点地区的挂靠（如菲律宾） |
+| `UKNet` | 英国，仅本地服务 |
+| `EUNet` | 欧洲 |
+| `AUNet` / `BRNet` | 大洋洲 / 南美 |
 
 详见 [docs/architecture.md](docs/architecture.md)。
 
