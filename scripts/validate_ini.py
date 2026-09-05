@@ -201,11 +201,15 @@ def check_online(path):
 
 
 def check_dist_sync():
-    """检查 dist/ 是否与 cfg/ 同步。
+    """检查 dist/ 是否与 cfg/ 同步。用与 build_ini.py 相同的剥离规则重算后比对。
 
-    dist/ 是产物，任何人手改 dist/ 或忘了跑构建，都会让正式引用的配置
-    与源文件不一致，而且不会有任何提示。这里用与 build_ini.py 相同的剥离
-    规则重算一遍，逐字节比对。"""
+    仅在 --check-dist 时运行，**不进 CI 默认流程**。
+    原因：workflow 的步骤顺序是「校验 → 构建」。改了 cfg/ 之后 dist/ 本来就是旧的，
+    等着被构建重新生成；若默认执行本检查，校验会在构建之前把 job 掐断，
+    dist/ 永远没机会更新 —— 任何一次正常的 cfg 修改都会让 CI 红掉。
+
+    它的用途是本地预提交自查：手改过 dist/、或改完 cfg/ 忘了跑构建就想提交时，
+    先跑 `validate_ini.py --check-dist` 能立刻发现。"""
     DIST = os.path.join(ROOT, 'dist')
     if not os.path.isdir(DIST):
         warn('dist', 'dist/ 目录不存在，尚未构建')
@@ -232,6 +236,9 @@ def check_dist_sync():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--online', action='store_true', help='额外拉取所有 provider 校验 payload 结构')
+    ap.add_argument('--check-dist', action='store_true',
+                    help='检查 dist/ 是否与 cfg/ 同步。本地提交前自查用；'
+                         'CI 里不要开，因为构建步骤排在校验之后')
     a = ap.parse_args()
 
     names = sorted(f for f in os.listdir(SRC) if f.endswith('.ini'))
@@ -242,7 +249,8 @@ def main():
             check_online(p)
         print('%-32s %3d ruleset / %3d group' % (n, nr, ng))
 
-    check_dist_sync()
+    if a.check_dist:
+        check_dist_sync()
 
     if warns:
         print('\n告警 %d 条：' % len(warns))
