@@ -10,6 +10,10 @@ on:
       - 'scripts/**'
       - '.github/workflows/build-ini.yml'
   workflow_dispatch:
+  # 由 Openclash-Rule 构建完成后触发：规则库改了文件名或目录结构时，
+  # 本仓库不会有任何 push，只有这条通知能立刻发现引用断裂
+  repository_dispatch:
+    types: [rules-updated]
   schedule:
     # 每周一 03:00 UTC 跑一次联网校验：规则库那边删文件或改结构时，
     # 配置这边不会有任何 push，只能靠定时任务发现
@@ -42,9 +46,11 @@ jobs:
         run: python3 scripts/build_ini.py
 
       - name: 联网校验规则源
-        # push 触发时也跑，但失败不阻断提交 —— 规则源不可达是对方仓库的问题，
-        # 不应该卡住本仓库的配置发布
-        continue-on-error: true
+        # push 触发时失败不阻断提交 —— 规则源不可达是对方仓库的问题，
+        # 不应该卡住本仓库的配置发布。
+        # 但由 Openclash-Rule 的 repository_dispatch 或定时任务触发时必须报错，
+        # 这两种场景的唯一目的就是发现引用断裂。
+        continue-on-error: ${{ github.event_name == 'push' }}
         run: python3 scripts/validate_ini.py --online
 
       - name: 提交产物
