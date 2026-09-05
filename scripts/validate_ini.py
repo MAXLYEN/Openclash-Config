@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+配置校验：检查 cfg/*.ini 的结构完整性。
+
+构建脚本只负责剥注释，真正防事故的是这一步。检查项分两级：
+  ERROR   会让配置生成失败或整块规则静默失效 -> 阻断构建
+  WARN    可疑但不一定错 -> 只提示
+
+不认识任何具体分组名，纯结构检查，v2/v3/vN 通用。
+带 --online 时额外做网络检查（拉取每个 ruleset 产物，验证 payload 结构）。
+"""
+import os, re, sys, argparse, urllib.request, concurrent.futures
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC  = os.path.join(ROOT, 'cfg')
+
+BUILTIN = {'DIRECT', 'REJECT', 'REJECT-TINYGIF'}
+# Go RE2 不支持的语法；正则编译失败会让分组变空，且没有任何报错
+RE2_UNSUPPORTED = (r'(?!', r'(?<!', r'(?<=', r'(?=', r'\1', r'\2')
+# 规则源与更新间隔的约定
+INTERVAL_CONVENTION = {'raw.githubusercontent.com': 3600, 'jsdelivr.net': 28800}
+
+errors, warns = [], []
+
+
+def err(f, msg):  errors.append('%s: %s' % (f, msg))
+def warn(f, msg): warns.append('%s: %s' % (f, msg))
+
+
+def parse(path):
+    groups, order = {}, []          # name -> [candidate, ...]
+    rulesets = []                   # (group, payload, lineno)
+    settings = {}
+    section = None
+    for i, raw in enumerate(open(path, encoding='utf-8'), 1):
+        line = raw.strip()
+        if not line or line.startswith((';', '#', '//')):
+            continue
+        if line.startswith('[') and line.endswith(']'):
+            section = line[1:-1]
+            continue
+        if '=' not in line:
+            continue
+        key, val = line.split('=', 1)
+        key = key.strip()
+        if key == 'ruleset':
+            g, _, payload = val.partition(',')
+            rulesets.append((g.strip(), payload.strip(), i))
+        elif key == 'custom_proxy_group':
+            parts = val.split('`')
+            name = parts[0].strip()
+            if name in groups:
+                err(os.path.basename(path), '第 %d 行 策略组重名：%s' % (i, name))
+            groups[name] = parts[1:]
+            order.append(name)
+        else:
+            settings[key] = val.strip()
+    return groups, order, rulesets, settings, section
+
+
+def check(path):
+    f = os.path.basename(path)
+    groups, order, rulesets, settings, last_section = parse(path)
+    defined = set(groups)
+
+    # 1. 必备开关
+    for k, want in (('enable_rule_generator', 'true'), ('overwrite_original_rules', 'true')):
+        if settings.get(k) != want:
+            warn(f, '%s 不是 %s（当前 %r）' % (k, want, settings.get(k)))
+
+    # 2. ruleset 指向的分组必须已定义
+    for g, payload, i in rulesets:
+        if g not in defined and g not in BUILTIN:
+            err(f, '第 %d 行 ruleset 指向未定义的分组：%s' % (i, g))
+
+    # 3. 候选引用必须已定义
+    for name, cands in groups.items():
+        for c in cands:
+            if not c.startswith('[]'):
+                continue                       # 正则筛选，不校验
+            ref = c[2:].strip()
+            if ref not in defined and ref not in BUILTIN:
+                err(f, '分组 %s 的候选引用了未定义的目标：%s' % (name, ref))
+
+    # 4. 循环引用 —— Clash 加载时会直接失败
+    graph = {n: [c[2:].strip() for c in cs if c.startswith('[]')] for n, cs in groups.items()}
+    state = {}
+    def dfs(n, stack):
+        if state.get(n) == 2: return
+        if state.get(n) == 1:
+            err(f, '策略组循环引用：%s' % ' -> '.join(stack[stack.index(n):] + [n]))
+            return
+        state[n] = 1
+        for m in graph.get(n, []):
+            if m in graph: dfs(m, stack + [n])
+        state[n] = 2
+    for n in graph: dfs(n, [])
+
+    # 5. 定义了却没有任何规则指向的分组（节点池与 Auto-Test 类除外：它们靠候选引用）
+    used_by_rule = {g for g, _, _ in rulesets}
+    used_by_cand = {c[2:].strip() for cs in groups.values() for c in cs if c.startswith('[]')}
+    for n in order:
+        if n not in used_by_rule and n not in used_by_cand:
+            warn(f, '分组 %s 既无规则指向也无人引用，是死分组' % n)
+
+    # 6. FINAL 兜底
+    finals = [i for g, p, i in rulesets if p.upper() in ('[]FINAL', '[]MATCH')]
+    if len(finals) != 1:
+        err(f, '[]FINAL 兜底应恰好一条，实际 %d 条' % len(finals))
+    elif finals[0] != max(i for _, _, i in rulesets):
+        err(f, '[]FINAL 不在 ruleset 段最后（第 %d 行）' % finals[0])
+
+    # 7. url-test 组的正则
+    for name, cands in groups.items():
+        if not cands or cands[0] not in ('url-test', 'fallback', 'load-balance'):
+            continue
+        pat = cands[1] if len(cands) > 1 else ''
+        for bad in RE2_UNSUPPORTED:
+            if bad in pat:
+                err(f, '分组 %s 的正则含 Go RE2 不支持的语法 %s，会导致分组为空且无报错' % (name, bad))
+        try:
+            re.compile(pat)
+        except re.error as e:
+            err(f, '分组 %s 的正则无法编译：%s' % (name, e))
+
+    # 8. 规则源与更新间隔的约定
+    for g, payload, i in rulesets:
+        if not payload.startswith('clash-classic:'):
+            continue
+        m = re.search(r',(\d+)\s*$', payload)
+        if not m:
+            warn(f, '第 %d 行 ruleset 未带更新间隔，会被内联展开而非生成 provider' % i)
+            continue
+        interval = int(m.group(1))
+        for host, want in INTERVAL_CONVENTION.items():
+            if host in payload and interval != want:
+                warn(f, '第 %d 行 %s 源的间隔是 %d，约定为 %d' % (i, host, interval, want))
+
+    # 9. 单候选分组：可行但会静默降级（子转换器在节点池为空时插入 DIRECT）
+    for name, cands in groups.items():
+        if cands and cands[0] == 'select' and len(cands) == 2 \
+           and cands[1].lstrip('[]').strip() not in BUILTIN:
+            warn(f, '分组 %s 只有一个候选：节点匹配不到时会静默降级为直连，且面板上无法手动救急' % name)
+
+    return len(rulesets), len(groups)
+
+
+def check_online(path):
+    """拉取每个 provider 产物，确认是 payload: 结构。
+    历史事故：166 个 provider 引用的是纯文本 .list，加载成功但规则数为 0，
+    流量全部落到 GeoSite 兜底，因为兜底大多也能导向正确分组，问题被长期掩盖。"""
+    f = os.path.basename(path)
+    urls = []
+    for raw in open(path, encoding='utf-8'):
+        line = raw.strip()
+        if not line.startswith('ruleset=') or 'clash-classic:' not in line:
+            continue
+        u = line.split('clash-classic:', 1)[1].rsplit(',', 1)[0]
+        urls.append(u)
+
+    def probe(u):
+        try:
+            req = urllib.request.Request(u, headers={'User-Agent': 'ini-validator/1.0'})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                head = r.read(4096).decode('utf-8', 'replace')
+        except Exception as e:
+            return u, 'ERROR', '拉取失败：%s' % e
+        if 'payload:' not in head:
+            return u, 'ERROR', '不是 classical provider 结构（缺 payload:），provider 会加载为 0 条规则'
+        if re.search(r'payload:\s*\[\s*\]', head):
+            return u, 'WARN', 'payload 为空，这一行在规则链上不做任何匹配'
+        return u, None, None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
+        for u, level, msg in ex.map(probe, sorted(set(urls))):
+            if level == 'ERROR': err(f, '%s -> %s' % (u.rsplit('/', 1)[-1], msg))
+            elif level == 'WARN': warn(f, '%s -> %s' % (u.rsplit('/', 1)[-1], msg))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--online', action='store_true', help='额外拉取所有 provider 校验 payload 结构')
+    a = ap.parse_args()
+
+    names = sorted(f for f in os.listdir(SRC) if f.endswith('.ini'))
+    for n in names:
+        p = os.path.join(SRC, n)
+        nr, ng = check(p)
+        if a.online:
+            check_online(p)
+        print('%-32s %3d ruleset / %3d group' % (n, nr, ng))
+
+    if warns:
+        print('\n告警 %d 条：' % len(warns))
+        for w in warns: print('  ⚠ ' + w)
+    if errors:
+        print('\n错误 %d 条：' % len(errors))
+        for e in errors: print('  ✗ ' + e)
+        sys.exit(1)
+    print('\n校验通过')
+
+
+if __name__ == '__main__':
+    main()
