@@ -7,52 +7,78 @@
 
 ## 一、规则源分档
 
-| 用途 | 源 | 更新间隔 | 数量 |
-|---|---|---|---|
-| 自建、强制代理/直连、AI、交易所、SG 金融 | `raw.githubusercontent.com/.../refs/heads/main` | `3600` | 20 |
-| 其余公共规则 | `testingcf.jsdelivr.net/gh/...@main` | `28800` | 101 |
+| 用途 | 源 | CDN 厂商 | 更新间隔 | 数量 |
+|---|---|---|---|---|
+| 自建、强制代理/直连、AI、交易所、SG 金融 | `fastly.jsdelivr.net/gh/...@main` | Fastly | `3600` | 20 |
+| 其余公共规则 | `testingcf.jsdelivr.net/gh/...@main` | Cloudflare | `28800` | 97 |
 
+两个源底层都是 jsdelivr，区别是**CDN 厂商不同**：Fastly 与 Cloudflare。
 `validate_ini.py` 会检查这条约定，源与间隔不匹配会报 WARN。
+
+### ⚠ 不要写 raw.githubusercontent.com
+
+OpenClash 的「Github 加速地址」设置会改写 provider 的 url
+（源码 `luci-app-openclash/root/usr/share/openclash/yml_rules_change.sh:295`）：
+
+```ruby
+if config['url'] =~ /^https:\/\/raw.githubusercontent.com/ then
+   url_parts = config['url'].split('/');
+   config['url'] = '$github_address_mod' + 'gh/' + url_parts[3] + '/' +
+                   url_parts[4] + '@' + config['url'].split(...)[1];
+```
+
+它把 `raw.githubusercontent.com/用户/仓库/剩余路径` 拼成 `gh/用户/仓库@剩余路径`，
+**不知道 `refs/heads/main` 应折叠成 `main`**。所以：
+
+```
+ini 里写的       https://raw.githubusercontent.com/MAXLYEN/Openclash-Rule/refs/heads/main/rules/yaml/X.yaml
+内核实际请求的   https://fastly.jsdelivr.net/gh/MAXLYEN/Openclash-Rule@refs/heads/main/rules/yaml/X.yaml
+CI purge 刷的    https://purge.jsdelivr.net/gh/MAXLYEN/Openclash-Rule@main/rules/yaml/X.yaml
+```
+
+jsdelivr 把 `@main` 和 `@refs/heads/main` 当**两个独立路径**缓存，于是 purge 打的
+不是内核访问的那个键 —— 表现为 purge 返回 200 但 CDN 纹丝不动，只能等自然过期。
+
+2026-09-06 起 ini 直接写显式 fastly 地址，改写规则不再匹配，所写即所跑。
+`validate_ini.py` 会把新出现的 `raw.githubusercontent.com` 报为 ERROR。
 
 ### 为什么保留两个源
 
-最初的理由是「raw 能即时生效、jsdelivr 有 CDN 缓存」。**这个理由已经不成立** ——
-2026-09-05 起构建 workflow 会在推送后自动 purge 变动过的文件，jsdelivr 的 CDN
-那一层延迟已经消掉；反过来 raw 自己约 5 分钟的 CDN 缓存 GitHub 不提供 purge 接口，
-反而更不可控。
+最初的理由是「raw 能即时生效、jsdelivr 有 CDN 缓存」，**这个理由是错的**：
+运行时 raw 根本没被使用（被上述改写截走），而 purge 自动化之后 CDN 缓存那层
+延迟也已消除。
 
-评估过统一到单一源，结论是**维持两源**，理由换成可用性冗余：
+现在的理由是**CDN 厂商冗余**：Fastly 与 Cloudflare 任一出问题，另一批规则集
+仍能正常更新，不会 117 个 provider 一起停摆。这个冗余原本是 OpenClash 改写行为
+的意外产物，现在把它变成明示的设计。
 
-- 任一源出问题时，另一批规则集仍能正常更新，不会 121 个 provider 一起停摆
-- `testingcf.jsdelivr.net` 是 Cloudflare 的测试端点而非官方主域 `cdn.jsdelivr.net`，
-  国内可达性通常更好，但性质上是测试端点，不宜全押
-- raw 在国内直连常不可达。所以走 raw 的那 20 个里包含 `Custom_Direct_Domain`、
-  `SelfHosted_Domain` 是需要留意的一点：万一代理故障、raw 又拉不到，
-  这批"救急用"的规则恰好更新不了。它们的内容变动很少，风险可接受，但心里要有数
-
-**provider 拉取失败不会让已加载的规则失效** —— 内核继续用本地缓存的旧版本，
-只影响"多久拿到新规则"，不影响分流本身。这是两源方案风险可控的前提。
+`provider 拉取失败不会让已加载的规则失效` —— 内核继续用本地缓存的旧版本，
+只影响「多久拿到新规则」，不影响分流本身。这是两源方案风险可控的前提。
 
 ### 真正决定生效速度的是间隔，不是源
 
-源和间隔是两个独立维度，现在按约定捆在一起只是为了好记。给新规则集选源时按
-「它属于哪一批」判断，不要再用「需不需要即时生效」当依据 —— 需不需要快由间隔决定。
+源和间隔是两个独立维度，按约定捆在一起只是为了好记。给新规则集选源时按
+「它属于哪一批」判断，不要用「需不需要即时生效」当依据。
 
 ### jsdelivr 缓存刷新
 
-构建 workflow 的「刷新 jsdelivr 缓存」步骤会自动 purge 本次变动的文件。
-需要手动刷时：
+构建 workflow 的「刷新 jsdelivr 缓存」步骤会自动 purge 本次变动的文件。手动刷：
 
 ```
 https://purge.jsdelivr.net/gh/MAXLYEN/Openclash-Rule@main/rules/yaml/文件名.yaml
 ```
 
-purge 必须在 `git push` **之后**执行 —— 它会让 jsdelivr 立即回源，
-推送之前回源拿到的还是旧内容。
+purge 必须在 `git push` **之后** —— 它会让 jsdelivr 立即回源，推送之前回源
+拿到的还是旧内容。
+
+purge 是否同时清掉 Fastly 与 Cloudflare 两个端点，尚未实测确认。验证方法：
+改一条规则推送，等 CI purge 完，然后
+`sh openclash-verify.sh --check <fastly源的规则集> <testingcf源的规则集>`，
+看两边的 CDN 列是否都跟上仓库列。若只有一边跟上，CI 的 purge 步骤需对两个端点各刷一次。
 
 ### 备用端点
 
-`testingcf` 出问题时可整体替换为 `fastly.jsdelivr.net` 或 `gcore.jsdelivr.net`，
+出问题时可整体替换为 `cdn.jsdelivr.net` 或 `gcore.jsdelivr.net`，
 是一次全局字符串替换，成本很低。
 
 ---

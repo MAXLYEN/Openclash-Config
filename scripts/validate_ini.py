@@ -19,12 +19,25 @@ BUILTIN = {'DIRECT', 'REJECT', 'REJECT-TINYGIF'}
 # Go RE2 不支持的语法；正则编译失败会让分组变空，且没有任何报错
 RE2_UNSUPPORTED = (r'(?!', r'(?<!', r'(?<=', r'(?=', r'\1', r'\2')
 # 规则源与更新间隔的约定
-INTERVAL_CONVENTION = {'raw.githubusercontent.com': 3600, 'jsdelivr.net': 28800}
+# 两个端点都是 jsdelivr，只是 CDN 厂商不同（Fastly / Cloudflare），
+# 靠端点区分两档更新间隔。注意匹配顺序：fastly 必须先判，
+# 否则 'jsdelivr.net' 会把 fastly 地址也一起匹配上。
+INTERVAL_CONVENTION = {'fastly.jsdelivr.net': 3600, 'testingcf.jsdelivr.net': 28800}
 
 errors, warns = [], []
+# 头部注释里带这个标记的文件，其 ERROR 降级为 WARN，不阻断构建。
+# 用途：为兼容旧订阅链接保留、但已不再维护的历史版本配置。
+DEPRECATED_MARK = '已停止维护'
+deprecated = set()
 
 
-def err(f, msg):  errors.append('%s: %s' % (f, msg))
+def err(f, msg):
+    if f in deprecated:
+        warns.append('%s: %s（该文件已停止维护，降级为告警）' % (f, msg))
+    else:
+        errors.append('%s: %s' % (f, msg))
+
+
 def warn(f, msg): warns.append('%s: %s' % (f, msg))
 
 
@@ -61,6 +74,9 @@ def parse(path):
 
 def check(path):
     f = os.path.basename(path)
+    head = ''.join(open(path, encoding='utf-8').readlines()[:10])
+    if DEPRECATED_MARK in head:
+        deprecated.add(f)
     groups, order, rulesets, settings, last_section = parse(path)
     defined = set(groups)
 
@@ -136,6 +152,16 @@ def check(path):
         for host, want in INTERVAL_CONVENTION.items():
             if host in payload and interval != want:
                 warn(f, '第 %d 行 %s 源的间隔是 %d，约定为 %d' % (i, host, interval, want))
+
+    # 8b. 禁止 raw.githubusercontent.com
+    # OpenClash 的「Github 加速地址」会把它改写成
+    # fastly.jsdelivr.net/gh/...@refs/heads/main，与 CI purge 用的 @main
+    # 不是同一个缓存键，purge 会长期失效（源码 yml_rules_change.sh:295）
+    for g, payload, i in rulesets:
+        if 'raw.githubusercontent.com' in payload:
+            err(f, '第 %d 行使用了 raw.githubusercontent.com，会被 OpenClash 改写成 '
+                   '@refs/heads/main 而使 CI 的 purge 失效。请改写为 '
+                   'https://fastly.jsdelivr.net/gh/<用户>/<仓库>@main/...' % i)
 
     # 9. 单候选分组：可行但会静默降级（子转换器在节点池为空时插入 DIRECT）
     for name, cands in groups.items():
