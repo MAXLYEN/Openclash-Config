@@ -90,6 +90,7 @@ def check(path):
     head = ''.join(open(path, encoding='utf-8').readlines()[:10])
     if DEPRECATED_MARK in head:
         deprecated.add(f)
+        warn(f, '该文件已停止维护，规则源相关检查已跳过')
     groups, order, rulesets, settings, last_section = parse(path)
     defined = set(groups)
 
@@ -153,8 +154,8 @@ def check(path):
         except re.error as e:
             err(f, '分组 %s 的正则无法编译：%s' % (name, e))
 
-    # 8. 规则源与更新间隔的约定
-    for g, payload, i in rulesets:
+    # 8. 规则源与更新间隔的约定（已停用文件跳过）
+    for g, payload, i in rulesets if f not in deprecated else []:
         if not payload.startswith('clash-classic:'):
             continue
         m = re.search(r',(\d+)\s*$', payload)
@@ -167,20 +168,25 @@ def check(path):
                 warn(f, '第 %d 行 %s 源的间隔是 %d，约定为 %d' % (i, host, interval, want))
 
     # 8a. provider 主机名必须是自建反代
-    for g, payload, i in rulesets:
-        if payload.startswith('clash-classic:') and RULE_HOST not in payload:
-            err(f, '第 %d 行的规则源不是 %s。直接引用 jsdelivr 会重新引入不可控的 '
-                   'CDN 缓存层' % (i, RULE_HOST))
+    # 已停用维护的文件整体跳过本检查：它按定义不会再改，每次构建刷出一百多条
+    # 永远不会被处理的告警只会淹没真正需要看的输出。
+    # 结构性检查（死分组、FINAL、循环引用）仍然保留，那些至少描述了现状。
+    if f not in deprecated:
+        for g, payload, i in rulesets:
+            if payload.startswith('clash-classic:') and RULE_HOST not in payload:
+                err(f, '第 %d 行的规则源不是 %s。直接引用 jsdelivr 会重新引入不可控的 '
+                       'CDN 缓存层' % (i, RULE_HOST))
 
     # 8b. 禁止 raw.githubusercontent.com
     # OpenClash 的「Github 加速地址」会把它改写成
     # fastly.jsdelivr.net/gh/...@refs/heads/main，与 CI purge 用的 @main
     # 不是同一个缓存键，purge 会长期失效（源码 yml_rules_change.sh:295）
-    for g, payload, i in rulesets:
-        if 'raw.githubusercontent.com' in payload:
-            err(f, '第 %d 行使用了 raw.githubusercontent.com，会被 OpenClash 改写成 '
-                   '@refs/heads/main 而使 CI 的 purge 失效。请改写为 '
-                   'https://fastly.jsdelivr.net/gh/<用户>/<仓库>@main/...' % i)
+    if f not in deprecated:
+        for g, payload, i in rulesets:
+            if 'raw.githubusercontent.com' in payload:
+                err(f, '第 %d 行使用了 raw.githubusercontent.com，会被 OpenClash 改写成 '
+                       '@refs/heads/main 而使 CI 的 purge 失效。请改写为 '
+                       'https://%s/gh/<用户>/<仓库>@main/...' % (i, RULE_HOST))
 
     # 9. 单候选分组：可行但会静默降级（子转换器在节点池为空时插入 DIRECT）
     for name, cands in groups.items():
