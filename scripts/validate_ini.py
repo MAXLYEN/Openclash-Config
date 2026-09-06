@@ -24,6 +24,13 @@ RE2_UNSUPPORTED = (r'(?!', r'(?<!', r'(?<=', r'(?=', r'\1', r'\2')
 # 否则 'jsdelivr.net' 会把 fastly 地址也一起匹配上。
 INTERVAL_CONVENTION = {'fastly.jsdelivr.net': 3600, 'testingcf.jsdelivr.net': 28800}
 
+# 刻意留空的规则集：--online 检查到 payload: [] 时不告警。
+#   SelfHosted_Domain —— 自建域名写在路由器本地的 openclash_custom_overwrite.sh，
+#                        本文件只为 Self-Hosted 策略组提供挂载点
+#   Custom-Made_Domain —— 效果同上
+#                        本文件为 Custom-Made 策略组提供挂载点
+INTENTIONALLY_EMPTY = {'SelfHosted_Domain.yaml', 'Custom-Made_Domain.yaml'}
+
 errors, warns = [], []
 # 头部注释里带这个标记的文件，其 ERROR 降级为 WARN，不阻断构建。
 # 用途：为兼容旧订阅链接保留、但已不再维护的历史版本配置。
@@ -206,11 +213,12 @@ def check_online(path):
                 continue
             if 'payload:' in head:
                 if re.search(r'payload:\s*\[\s*\]', head):
-                    # 规则文件 header 里写明了为什么是空的，就不再重复告警。
-                    # 想消掉这条告警，在对应 .list 的 header 里写上"占位"或"刻意留空"。
-                    if '占位' in head or '刻意留空' in head:
+                    # 2026-09-06 起 rules/yaml 改为零注释产物，无法再从内容里读出
+                    # "占位"标记，改用显式白名单。新增刻意留空的规则集时在此登记，
+                    # 并在对应 .list 的 header 里写清原因。
+                    if u.rsplit('/', 1)[-1] in INTENTIONALLY_EMPTY:
                         return u, None, None
-                    return u, 'WARN', 'payload 为空，且规则文件 header 未说明原因'
+                    return u, 'WARN', 'payload 为空，且不在 INTENTIONALLY_EMPTY 白名单中'
                 return u, None, None
             # 拿到了内容但没有 payload:，把实到的东西一并报出来，否则无法判断
             # 是文件真错了，还是 CDN 返回了别的东西
