@@ -7,18 +7,53 @@
 
 ## 一、规则源分档
 
-| 用途 | 源 | 更新间隔 |
-|---|---|---|
-| 金融、AI、私人定制（需即时生效） | `raw.githubusercontent.com` | `3600` |
-| 其余公共规则 | `testingcf.jsdelivr.net` | `28800` |
+| 用途 | 源 | 更新间隔 | 数量 |
+|---|---|---|---|
+| 自建、强制代理/直连、AI、交易所、SG 金融 | `raw.githubusercontent.com/.../refs/heads/main` | `3600` | 20 |
+| 其余公共规则 | `testingcf.jsdelivr.net/gh/...@main` | `28800` | 101 |
 
-jsdelivr 有 CDN 缓存，改完规则库后强制刷新：
+`validate_ini.py` 会检查这条约定，源与间隔不匹配会报 WARN。
+
+### 为什么保留两个源
+
+最初的理由是「raw 能即时生效、jsdelivr 有 CDN 缓存」。**这个理由已经不成立** ——
+2026-09-05 起构建 workflow 会在推送后自动 purge 变动过的文件，jsdelivr 的 CDN
+那一层延迟已经消掉；反过来 raw 自己约 5 分钟的 CDN 缓存 GitHub 不提供 purge 接口，
+反而更不可控。
+
+评估过统一到单一源，结论是**维持两源**，理由换成可用性冗余：
+
+- 任一源出问题时，另一批规则集仍能正常更新，不会 121 个 provider 一起停摆
+- `testingcf.jsdelivr.net` 是 Cloudflare 的测试端点而非官方主域 `cdn.jsdelivr.net`，
+  国内可达性通常更好，但性质上是测试端点，不宜全押
+- raw 在国内直连常不可达。所以走 raw 的那 20 个里包含 `Custom_Direct_Domain`、
+  `SelfHosted_Domain` 是需要留意的一点：万一代理故障、raw 又拉不到，
+  这批"救急用"的规则恰好更新不了。它们的内容变动很少，风险可接受，但心里要有数
+
+**provider 拉取失败不会让已加载的规则失效** —— 内核继续用本地缓存的旧版本，
+只影响"多久拿到新规则"，不影响分流本身。这是两源方案风险可控的前提。
+
+### 真正决定生效速度的是间隔，不是源
+
+源和间隔是两个独立维度，现在按约定捆在一起只是为了好记。给新规则集选源时按
+「它属于哪一批」判断，不要再用「需不需要即时生效」当依据 —— 需不需要快由间隔决定。
+
+### jsdelivr 缓存刷新
+
+构建 workflow 的「刷新 jsdelivr 缓存」步骤会自动 purge 本次变动的文件。
+需要手动刷时：
 
 ```
 https://purge.jsdelivr.net/gh/MAXLYEN/Openclash-Rule@main/rules/yaml/文件名.yaml
 ```
 
-`validate_ini.py` 会检查这条约定，间隔不符会报 WARN。
+purge 必须在 `git push` **之后**执行 —— 它会让 jsdelivr 立即回源，
+推送之前回源拿到的还是旧内容。
+
+### 备用端点
+
+`testingcf` 出问题时可整体替换为 `fastly.jsdelivr.net` 或 `gcore.jsdelivr.net`，
+是一次全局字符串替换，成本很低。
 
 ---
 
