@@ -22,7 +22,13 @@ RE2_UNSUPPORTED = (r'(?!', r'(?<!', r'(?<=', r'(?=', r'\1', r'\2')
 # 两个端点都是 jsdelivr，只是 CDN 厂商不同（Fastly / Cloudflare），
 # 靠端点区分两档更新间隔。注意匹配顺序：fastly 必须先判，
 # 否则 'jsdelivr.net' 会把 fastly 地址也一起匹配上。
-INTERVAL_CONVENTION = {'fastly.jsdelivr.net': 3600, 'testingcf.jsdelivr.net': 28800}
+# 规则源统一走自建反代，间隔统一 3600。
+# 不再按源分档 —— 上游只有 fastly 一个，CDN 那层延迟由 CI 的 purge 消掉，
+# 剩下的延迟只由 interval 决定。
+INTERVAL_CONVENTION = {'cf.210723.xyz': 3600}
+# provider 只允许走这个主机名。写死是有意的：直接引用 jsdelivr 会重新引入
+# 不可控的 CDN 缓存层，引用 raw 则会被 OpenClash 改写。
+RULE_HOST = 'cf.210723.xyz'
 
 # 刻意留空的规则集：--online 检查到 payload: [] 时不告警。
 #   SelfHosted_Domain —— 自建域名写在路由器本地的 openclash_custom_overwrite.sh，
@@ -159,6 +165,12 @@ def check(path):
         for host, want in INTERVAL_CONVENTION.items():
             if host in payload and interval != want:
                 warn(f, '第 %d 行 %s 源的间隔是 %d，约定为 %d' % (i, host, interval, want))
+
+    # 8a. provider 主机名必须是自建反代
+    for g, payload, i in rulesets:
+        if payload.startswith('clash-classic:') and RULE_HOST not in payload:
+            err(f, '第 %d 行的规则源不是 %s。直接引用 jsdelivr 会重新引入不可控的 '
+                   'CDN 缓存层' % (i, RULE_HOST))
 
     # 8b. 禁止 raw.githubusercontent.com
     # OpenClash 的「Github 加速地址」会把它改写成

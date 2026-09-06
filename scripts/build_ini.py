@@ -56,9 +56,7 @@ def make_debug(lines):
     out, n_src, n_iv = [], 0, 0
     for l in lines:
         if l.startswith('ruleset=') and 'clash-classic:' in l:
-            if 'testingcf.jsdelivr.net' in l:
-                l = l.replace('testingcf.jsdelivr.net', 'fastly.jsdelivr.net')
-                n_src += 1
+            # 源已统一为自建反代，不再需要改写；保留计数字段以兼容输出格式
             l2 = re.sub(r',\d+$', ',%d' % DEBUG_INTERVAL, l)
             if l2 != l:
                 n_iv += 1
