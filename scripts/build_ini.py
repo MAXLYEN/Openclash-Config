@@ -30,6 +30,42 @@ COMMENT_PREFIX = (';', '#', '//')
 # 设为 False 则产物零注释，来源信息只存在 dist/manifest.json
 KEEP_HEADER = False
 
+# ---------- 调试版产物 ----------
+# 除正式产物外，额外生成一份 <名称>_debug.ini，用于"改完规则想立刻看到效果"的场景。
+# 与正式版的差别只有两处，都只影响送达速度，不影响任何分流行为：
+#
+#   1. 所有规则源改用 fastly.jsdelivr.net
+#      testingcf 是 Cloudflare 套在 Fastly 前面的一层，jsdelivr 的 purge API 清不到
+#      Cloudflare 那一层（实测 cf-cache-status: HIT / Age: 10538），只能等 s-maxage
+#      12 小时自然过期。fastly 直连 Fastly，purge 立即生效（实测 Age: 0）。
+#   2. 所有 provider 的 interval 统一压到 DEBUG_INTERVAL
+#
+# 调试时把 OpenClash 的订阅转换地址指向 dist/<名称>_debug.ini，调完再指回正式版。
+# 注意：调试版会让每个 provider 每 DEBUG_INTERVAL 秒重新下载一次，
+# 100+ 个规则集长期开着既浪费带宽也可能被 CDN 限速，用完记得切回去。
+# openclash-verify.sh 的 A 段会检测并提醒当前是否处于调试版。
+EMIT_DEBUG = True
+DEBUG_INTERVAL = 300
+DEBUG_SUFFIX = '_debug'
+# 头部标了这个标记的源文件不生成调试版（已停止维护的历史版本）
+SKIP_DEBUG_MARK = '已停止维护'
+
+
+def make_debug(lines):
+    """把正式产物的行序列改写成调试版。只动 ruleset 行的源与 interval。"""
+    out, n_src, n_iv = [], 0, 0
+    for l in lines:
+        if l.startswith('ruleset=') and 'clash-classic:' in l:
+            if 'testingcf.jsdelivr.net' in l:
+                l = l.replace('testingcf.jsdelivr.net', 'fastly.jsdelivr.net')
+                n_src += 1
+            l2 = re.sub(r',\d+$', ',%d' % DEBUG_INTERVAL, l)
+            if l2 != l:
+                n_iv += 1
+            l = l2
+        out.append(l)
+    return out, n_src, n_iv
+
 
 def sha256(text):
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
@@ -109,6 +145,16 @@ def main():
         if write_if_changed(dist_path, body):
             dist_updated += 1
 
+        # 调试版产物
+        dbg_note = ''
+        if EMIT_DEBUG and SKIP_DEBUG_MARK not in '\n'.join(lines[:10]):
+            dbg_lines, n_src, n_iv = make_debug(kept)
+            dbg_name = name[:-4] + DEBUG_SUFFIX + '.ini'
+            if write_if_changed(os.path.join(DIST, dbg_name),
+                                '\n'.join(dbg_lines) + '\n'):
+                dist_updated += 1
+            dbg_note = '    + %s（源改写 %d / interval→%d）' % (dbg_name, n_src, DEBUG_INTERVAL)
+
         s = stat_lines(kept)
         manifest[name] = {
             'src_sha256':  sha256('\n'.join(lines) + '\n'),
@@ -123,9 +169,13 @@ def main():
         print('%-32s %4d 行 -> %4d 行  (%d ruleset / %d group)  省 %d%%'
               % (name, len(lines), len(kept), s['ruleset'], s['group'],
                  round(100 * (1 - manifest[name]['dist_bytes'] / manifest[name]['src_bytes']))))
+        if dbg_note:
+            print(dbg_note)
 
     # dist 中的孤儿产物：告警，不删除
     for f in sorted(os.listdir(DIST)) if os.path.isdir(DIST) else []:
+        if f.endswith(DEBUG_SUFFIX + '.ini'):
+            continue          # 调试版是派生产物，cfg/ 里本就没有对应源文件
         if f.endswith('.ini') and f not in names:
             print('  ⚠ dist/%s 在 cfg/ 中已无对应源文件。'
                   '未删除 —— 可能仍有订阅在引用该 URL。确认无人使用后手动删除。' % f)
