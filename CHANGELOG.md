@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-09-24 — v2.8
+
+- Apple AI 域名与 IP 规则集优先于普通 Apple 规则集，固定交给 `USNet`
+- 英国通用规则仅引用合并后的 `UK_Domain` / `UK_IP`，保留英国媒体与 Wi-Fi Calling 专属规则
+- 将 `Others_Domain` 改为 `IPCheck_Domain`，并新增 `IPCheck_IP`，沿用 `Others` 策略组
+- 更新 BritboxUK 空占位对已删除的说明；新规则 URL 须待 Openclash-Rule 发布产物后可用
+
+---
+
 ## 2026-09-05 — v2.0
 
 仓库从 `Custom_OpenClash_Rules` 迁移至 `Openclash-Config`，不再是上游 fork，许可证由 CC BY-SA 4.0 改为 MIT。
