@@ -14,6 +14,7 @@
 - 将暂为空的 `AppleAI_IP` / `IPCheck_IP` 纳入联网校验的预期空规则集
 - 将已停用的 `OpenAI_IP` / `Copilot_IP` 纳入联网校验的预期空规则集（共用 IP 无法归属、ASN 范围过宽），保留成对引用
 - 更新 BritboxUK 空占位对已删除的说明；新规则 URL 须待 Openclash-Rule 发布产物后可用
+- `UK-wifi-call_Domain` 前移到 `Direct_Domain` 之前：原先 `Direct_Domain` 的 `ls.apple.com` 截走了 Apple 地区检测端点 `gspe1-ssl.ls.apple.com`，`EUNet_Domain` 截走了 `entsrv-uk.vodafone.com`，两者都到不了 `UKNet`；`UK-wifi-call_IP` 与 US / HK Wi-Fi Calling 规则无此问题，保持原位
 
 ---
 
