@@ -35,7 +35,11 @@ RULE_HOST = 'cf.210723.xyz'
 #                        本文件只为 Self-Hosted 策略组提供挂载点
 #   Custom-Made_Domain —— 效果同上
 #                        本文件为 Custom-Made 策略组提供挂载点
-INTENTIONALLY_EMPTY = {'SelfHosted_Domain.yaml', 'Custom-Made_Domain.yaml'}
+#   AppleAI_IP / IPCheck_IP —— 目前没有可单独归属的稳定 IP 段，保留成对占位
+INTENTIONALLY_EMPTY = {
+    'SelfHosted_Domain.yaml', 'Custom-Made_Domain.yaml',
+    'AppleAI_IP.yaml', 'IPCheck_IP.yaml',
+}
 
 errors, warns = [], []
 # 头部注释里带这个标记的文件，其 ERROR 降级为 WARN，不阻断构建。
