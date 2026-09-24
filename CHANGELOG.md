@@ -12,6 +12,7 @@
 - 英国通用规则仅引用合并后的 `UK_Domain` / `UK_IP`，保留英国媒体与 Wi-Fi Calling 专属规则
 - 将 `Others_Domain` 改为 `IPCheck_Domain`，并新增 `IPCheck_IP`，沿用 `Others` 策略组
 - 将暂为空的 `AppleAI_IP` / `IPCheck_IP` 纳入联网校验的预期空规则集
+- 将已停用的 `OpenAI_IP` / `Copilot_IP` 纳入联网校验的预期空规则集（共用 IP 无法归属、ASN 范围过宽），保留成对引用
 - 更新 BritboxUK 空占位对已删除的说明；新规则 URL 须待 Openclash-Rule 发布产物后可用
 
 ---
