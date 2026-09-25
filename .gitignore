@@ -18,3 +18,6 @@ Thumbs.db
 # 本地测试产物
 *.local.ini
 /tmp/
+
+# Claude Code 本地会话（后台任务的 git 工作树等）
+.claude/
