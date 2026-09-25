@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-09-24 — CI：固定运行环境（未升版本号，配置内容不变）
+
+- `build-ini.yml` 的 `runs-on` 由 `ubuntu-latest` 固定为 `ubuntu-24.04`：`ubuntu-latest` 自 2026-10-19 起迁移到 Ubuntu 26，避免运行环境在没有改动的情况下变化（与 Openclash-Rule `46b5b50` 一致）
+
+---
+
 ## 2026-09-24 — CI：与 Openclash-Rule 的双向通知（未升版本号，配置内容不变）
 
 - `validate_ini.py` 新增 `--rule-ref <提交号>`：Openclash-Rule 的规则源改为按该提交从 raw 读取，报错注明「按 Rule 提交 xxxxxxx 校验」。收到 `rules-updated` 通知时传入通知里的提交号 —— 镜像约 5 分钟才同步，此前读镜像会漏过规则库刚删除或改名的文件
