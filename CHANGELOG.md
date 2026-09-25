@@ -15,6 +15,7 @@
 - 将已停用的 `OpenAI_IP` / `Copilot_IP` 纳入联网校验的预期空规则集（共用 IP 无法归属、ASN 范围过宽），保留成对引用
 - 更新 BritboxUK 空占位对已删除的说明；新规则 URL 须待 Openclash-Rule 发布产物后可用
 - `UK-wifi-call_Domain` 前移到 `Direct_Domain` 之前：原先 `Direct_Domain` 的 `ls.apple.com` 截走了 Apple 地区检测端点 `gspe1-ssl.ls.apple.com`，`EUNet_Domain` 截走了 `entsrv-uk.vodafone.com`，两者都到不了 `UKNet`；`UK-wifi-call_IP` 与 US / HK Wi-Fi Calling 规则无此问题，保持原位
+- `ChinaMedia_Domain` 后移到 `GlobalMedia_Domain` 之后：其 `bilibili` / `qiyi` 关键字与 `iqiyi.com` 会提前吃掉 B 站国际版（`bilibili.tv`）和爱奇艺国际版（`iq.com` / `intl.iqiyi.com`），使其落入 `Domestic TV`。后移后仅 9 个国际版域名改走 `Global TV`，国内 B 站 / 爱奇艺 / 腾讯视频不受影响；`ChinaMedia_IP` 保持原位
 
 ---
 
