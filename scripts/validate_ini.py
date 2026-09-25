@@ -9,6 +9,14 @@
 
 不认识任何具体分组名，纯结构检查，v2/v3/vN 通用。
 带 --online 时额外做网络检查（拉取每个 ruleset 产物，验证 payload 结构）。
+
+--rule-ref <提交号>：配合 --online，把 Openclash-Rule 的规则源从自建镜像
+改为按该提交号从 raw.githubusercontent.com 读取。
+原因：镜像 cf.210723.xyz 约每 5 分钟才从上游同步一次，而规则库构建完成后
+约 10 秒就发来 rules-updated 通知。此时读镜像拿到的是旧文件 —— 规则库删掉
+或改名一个文件，这次校验照样通过（2026-09-24 删除 BritboxUK_Domain 时即如此）。
+按提交号读取才能看到刚推送的内容。不给该参数时（push、定时任务）仍读镜像，
+校验的是镜像本身的真实可用性。
 """
 import os, re, sys, time, argparse, urllib.request, concurrent.futures
 
@@ -30,6 +38,11 @@ INTERVAL_CONVENTION = {'cf.210723.xyz': 3600}
 # provider 只允许走这个主机名。写死是有意的：直接引用 jsdelivr 会重新引入
 # 不可控的 CDN 缓存层，引用 raw 则会被 OpenClash 改写。
 RULE_HOST = 'cf.210723.xyz'
+# --rule-ref 的改写规则：只改 Openclash-Rule 的镜像地址，其他 URL 原样拉取。
+# 改写只发生在 check_online() 拉取时，8b 的 raw.githubusercontent.com 禁用检查
+# 针对的是 ini 里写的 URL，不受影响。
+RULE_MIRROR_PREFIX = 'https://%s/gh/MAXLYEN/Openclash-Rule@main/' % RULE_HOST
+RULE_RAW_PREFIX = 'https://raw.githubusercontent.com/MAXLYEN/Openclash-Rule/%s/'
 
 # 刻意留空的规则集：--online 检查到 payload: [] 时不告警。
 #   SelfHosted_Domain —— 自建域名写在路由器本地的 openclash_custom_overwrite.sh，
@@ -237,22 +250,34 @@ def check(path):
     return len(rulesets), len(groups)
 
 
-def check_online(path, strict_empty=False):
+def check_online(path, strict_empty=False, rule_ref=None):
     """拉取每个 provider 产物，确认是 payload: 结构。
     历史事故：166 个 provider 引用的是纯文本 .list，加载成功但规则数为 0，
     流量全部落到 GeoSite 兜底，因为兜底大多也能导向正确分组，问题被长期掩盖。
 
     strict_empty：不在白名单里的空规则集记为 ERROR 而非 WARN。
     规则库的去重流程会把被完全覆盖的规则集注释成空文件（Steam_CDN、Nintendo_IP 都是这样变空的），
-    只告警时 CI 仍是绿的，只能靠人工发现。"""
+    只告警时 CI 仍是绿的，只能靠人工发现。
+
+    rule_ref：Openclash-Rule 的提交号。给定时 Openclash-Rule 的镜像地址改为按该提交
+    从 raw 读取，原因见文件头。"""
     f = os.path.basename(path)
-    urls = []
+    urls, rewritten = [], set()
     for raw in open(path, encoding='utf-8'):
         line = raw.strip()
         if not line.startswith('ruleset=') or 'clash-classic:' not in line:
             continue
         u = line.split('clash-classic:', 1)[1].rsplit(',', 1)[0]
+        if rule_ref and u.startswith(RULE_MIRROR_PREFIX):
+            u = RULE_RAW_PREFIX % rule_ref + u[len(RULE_MIRROR_PREFIX):]
+            rewritten.add(u)
         urls.append(u)
+    # 报错里注明读的是哪个提交，否则无法区分是镜像滞后还是该提交里文件确实不存在
+    tag = '（按 Rule 提交 %s 校验）' % rule_ref[:7] if rule_ref else ''
+
+    def label(u):
+        name = u.rsplit('/', 1)[-1]
+        return name + tag if u in rewritten else name
 
     def fetch(u):
         # 用浏览器 UA：部分 CDN（jsdelivr 走 Cloudflare）对陌生 UA 会返回
@@ -294,8 +319,8 @@ def check_online(path, strict_empty=False):
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
         for u, level, msg in ex.map(probe, sorted(set(urls))):
-            if level == 'ERROR': err(f, '%s -> %s' % (u.rsplit('/', 1)[-1], msg))
-            elif level == 'WARN': warn(f, '%s -> %s' % (u.rsplit('/', 1)[-1], msg))
+            if level == 'ERROR': err(f, '%s -> %s' % (label(u), msg))
+            elif level == 'WARN': warn(f, '%s -> %s' % (label(u), msg))
 
 
 def check_dist_sync():
@@ -343,6 +368,10 @@ def main():
     ap.add_argument('--strict-empty', action='store_true',
                     help='配合 --online：不在白名单里的空规则集记为错误。'
                          'CI 在规则库通知与定时任务触发时开启')
+    ap.add_argument('--rule-ref', metavar='REF',
+                    help='配合 --online：Openclash-Rule 的规则源不走镜像，按该提交号从 '
+                         'raw.githubusercontent.com 读取。CI 在收到 rules-updated 通知时传入 '
+                         '通知里的提交号，因为镜像约 5 分钟才同步一次')
     ap.add_argument('--check-dist', action='store_true',
                     help='检查 dist/ 是否与 cfg/ 同步。本地提交前自查用；'
                          'CI 里不要开，因为构建步骤排在校验之后')
@@ -353,7 +382,7 @@ def main():
         p = os.path.join(SRC, n)
         nr, ng = check(p)
         if a.online:
-            check_online(p, a.strict_empty)
+            check_online(p, a.strict_empty, a.rule_ref)
         print('%-32s %3d ruleset / %3d group' % (n, nr, ng))
 
     if a.check_dist:

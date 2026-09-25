@@ -51,8 +51,20 @@ jobs:
         # 但由 Openclash-Rule 的 repository_dispatch 或定时任务触发时必须报错，
         # 这两种场景的唯一目的就是发现引用断裂。
         # --strict-empty：规则集被去重流程清空时同样报错，而不是只告警。
+        # --rule-ref：rules-updated 通知在规则库推送后约 10 秒到达，而自建镜像约 5 分钟
+        # 才同步一次，读镜像只能拿到旧文件（删文件、改名都会漏过）。
+        # 因此按通知里的提交号（规则库含 yaml 产物的那次提交）直接读取。
+        # push 与定时任务不带该参数，校验的仍是镜像本身的真实可用性。
         continue-on-error: ${{ github.event_name == 'push' }}
-        run: python3 scripts/validate_ini.py --online --strict-empty
+        env:
+          RULE_SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || '' }}
+        run: |
+          REF_ARG=""
+          if [ -n "$RULE_SHA" ]; then
+            echo "按 Openclash-Rule 提交 ${RULE_SHA} 校验"
+            REF_ARG="--rule-ref $RULE_SHA"
+          fi
+          python3 scripts/validate_ini.py --online --strict-empty $REF_ARG
 
       - name: 提交产物
         run: |
@@ -75,6 +87,11 @@ jobs:
             git pull --rebase origin main
           done
           [ "$PUSHED" = 1 ] || exit 1
+          # 规则链有变化时记下推送后的 HEAD，供下一步通知 Openclash-Rule。
+          # 必须取推送成功后的 HEAD：中途 rebase 过的话，原提交号在远端并不存在
+          if echo "$CHANGED_INI" | grep -qx 'dist/Custom_Clash_V2.ini'; then
+            git rev-parse HEAD > /tmp/config_sha
+          fi
           # 清除 jsdelivr 缓存，让 README 里的 fastly 镜像地址立即拿到新配置。
           # 只清 fastly 这一层；testingcf 前面的 Cloudflare 缓存清不到（见 docs/design-notes.md）。
           # 清缓存失败不影响发布，只影响镜像地址的新鲜度。
@@ -85,3 +102,33 @@ jobs:
               echo "::warning::清缓存失败：${f}"
             fi
           done
+
+      - name: 通知 Openclash-Rule
+        # 规则链顺序变化后，规则库的冗余分析（dedupe.yml）需要按新配置重跑。
+        # 对方读取 client_payload.sha 对应提交的 dist/Custom_Clash_V2.ini，只出报告不提交；
+        # 对方的 build 只在 rules/list 或 scripts 变化时触发，因此不会形成循环。
+        #
+        # 需要在本仓库 Settings → Secrets and variables → Actions 添加 RULE_DISPATCH_TOKEN：
+        # 一个 fine-grained PAT，仓库范围选 MAXLYEN/Openclash-Rule，
+        # 权限 Contents: Read and write。GITHUB_TOKEN 无法跨仓库触发 workflow。
+        if: always()
+        continue-on-error: true
+        env:
+          RULE_DISPATCH_TOKEN: ${{ secrets.RULE_DISPATCH_TOKEN }}
+        run: |
+          if [ ! -s /tmp/config_sha ]; then
+            echo "dist/Custom_Clash_V2.ini 未变化或未推送，无需通知"
+            exit 0
+          fi
+          if [ -z "$RULE_DISPATCH_TOKEN" ]; then
+            echo "未配置 RULE_DISPATCH_TOKEN，跳过通知"
+            exit 0
+          fi
+          SHA=$(cat /tmp/config_sha)
+          echo "通知提交 ${SHA}"
+          curl -sS -f -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $RULE_DISPATCH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/MAXLYEN/Openclash-Rule/dispatches \
+            -d "{\"event_type\":\"config-updated\",\"client_payload\":{\"sha\":\"${SHA}\"}}"

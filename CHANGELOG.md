@@ -6,6 +6,13 @@
 
 ---
 
+## 2026-09-24 — CI：与 Openclash-Rule 的双向通知（未升版本号，配置内容不变）
+
+- `validate_ini.py` 新增 `--rule-ref <提交号>`：Openclash-Rule 的规则源改为按该提交从 raw 读取，报错注明「按 Rule 提交 xxxxxxx 校验」。收到 `rules-updated` 通知时传入通知里的提交号 —— 镜像约 5 分钟才同步，此前读镜像会漏过规则库刚删除或改名的文件
+- 构建推送后若 `dist/Custom_Clash_V2.ini` 有变化，向 Openclash-Rule 发送 `config-updated`（携带推送后的 HEAD），触发对方的冗余分析。需配置 `RULE_DISPATCH_TOKEN`，未配置时跳过（见 [docs/操作流程.md](docs/操作流程.md) 第 7 节）
+
+---
+
 ## 2026-09-24 — v1.x 旧配置维护（未升版本号）
 
 - `cfg/Custom_Clash.ini` 注释掉已在规则库删除的 `BritboxUK_Domain` 引用（消除 404；其域名已由紧邻的 `UKMedia_Domain` 以同一 `UKNet` 分组覆盖，路由不变）

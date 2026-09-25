@@ -91,6 +91,28 @@ OpenClash 的「Github 加速地址」会改写 provider 的 url
 所以 purge 只保证**兜底路径**的新鲜度。保留是低成本的保险，
 不再是主链路的一环。
 
+### 两仓库互相通知，都按提交号读取
+
+| 方向 | 事件 | 发送时机 | 对方做什么 |
+|---|---|---|---|
+| Rule → Config | `rules-updated` | Rule 构建推送产物后 | 本仓库跑联网校验（`--online --strict-empty --rule-ref <sha>`） |
+| Config → Rule | `config-updated` | 本仓库推送的产物里 `dist/Custom_Clash_V2.ini` 有变化 | Rule 的 `dedupe.yml` 按新规则链做冗余分析，只出报告 |
+
+两个方向的 `client_payload.sha` 都是**含产物的那次 bot 提交**，对方据此从
+`raw.githubusercontent.com/<仓库>/<sha>/...` 读取，而不是读镜像或分支：
+
+- 镜像约 5 分钟才从上游同步一次，通知却在推送后约 10 秒就到。读镜像拿到的是旧文件，
+  规则库删文件或改名时这次校验照样是绿的（2026-09-24 Rule 删除 `BritboxUK_Domain` 后，
+  本仓库一分钟后被触发的校验就是这样通过的）。
+- 发的必须是推送成功后的 `HEAD`：推送前 rebase 过的话，原提交号在远端并不存在。
+
+`--rule-ref` 只改写 `https://cf.210723.xyz/gh/MAXLYEN/Openclash-Rule@main/` 开头的地址，
+且只影响拉取，不影响「禁止 raw.githubusercontent.com」检查（那项检查的是 ini 里写的 URL）。
+push 与定时任务不带该参数，校验的仍是镜像本身的真实可用性。
+
+不会循环：Rule 的 dedupe 收到通知时只出报告、不提交；Rule 的 build 只在
+`rules/list` 或 `scripts` 变化时触发。两边的密钥配置见 [操作流程.md](操作流程.md) 第 7 节。
+
 ---
 
 ## 二、分组归属
