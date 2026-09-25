@@ -21,3 +21,11 @@ Thumbs.db
 
 # Claude Code 本地会话（后台任务的 git 工作树等）
 .claude/
+
+# 私人配置与笔记（只留本地，不上传）
+CLAUDE.md
+CLAUDE.local.md
+.env
+.env.*
+*.private.*
+private/
