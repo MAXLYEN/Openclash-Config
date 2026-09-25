@@ -19,6 +19,55 @@
 
 ---
 
+## 2026-09-12 — v2.7 内调整（未升版本号）
+
+- 地区专属区与泛分类 GEOSITE 区对调：地区文件（EUNet / UK / SG / US / JP / HK …）改为先于 `category-*` 泛分类兜底匹配
+- IP 区新增 `JP_IP`，挂 `JPNet`
+
+---
+
+## 2026-09-06 — v2.7
+
+- 所有规则源改走自建反代 `https://cf.210723.xyz/gh/...`（上游 `fastly.jsdelivr.net`，路径 1:1 透传），interval 统一为 3600
+- 不再受 testingcf 那层 Cloudflare 12 小时缓存影响，规则送达延迟只剩 fastly（CI 会 purge）与 interval 1 小时两层
+
+---
+
+## 2026-09-06 — v2.6
+
+- 规则源由「raw + 3600 / jsdelivr + 28800」改为 jsdelivr 双 CDN：`fastly` + 3600 用于自建、强制代理/直连、AI、交易所、SG 金融；`testingcf` + 28800 用于其余公共规则
+- 禁止 `raw.githubusercontent.com`：OpenClash 的「Github 加速地址」会把它改写成 `@refs/heads/main`，与 CI purge 的 `@main` 不是同一个缓存键
+
+---
+
+## 2026-09-06 — v2.5
+
+- 摘除 `Nintendo_IP`：其唯一一条 `IP-CIDR,35.192.0.0/12` 是 Google Cloud 的大段（约 104 万个 IP），整段判给 Game Platform 过宽，规则库已停用
+
+---
+
+## 2026-09-05 — v2.4
+
+- 摘除去重后变空的三个规则集：`Steam_CDN_Domain`（被 `SteamCN_Domain` 覆盖）、`Supercell_Domain`（被 `Game_Domain` 覆盖）、`BritboxUK_Domain`（被 `UKMedia_Domain` 覆盖）
+
+---
+
+## 2026-09-05 — v2.3
+
+- 撤除 `gemini.google.com` 内联修正：规则库已停用 `OpenAI_Domain` 里误收的那一条，改由 `Gemini_Domain` 正常命中（同为 `USNet`）
+- `crypto.com` 内联规则保留，定位从「修正」改为不依赖 GeoSite 的显式声明（`UKNet_Domain` 里过宽的 `DOMAIN-KEYWORD,crypto` 已停用）
+
+---
+
+## 2026-09-05 — v2.1 ~ v2.2
+
+- `Copilot_Domain` 改回 `OpenAI_Domain` 之后，推翻 v2.0 的前移：`Copilot_Domain` 有 26 条是 `OpenAI_Domain` 的原样复制（含 `openai.com`、`chatgpt.com`），前置会让 ChatGPT 组空转（实机日志：`chatgpt.com -> match RuleSet(Copilot_Domain) using Copilot`）
+- 新增 `gemini.google.com` → `USNet` 内联修正（`OpenAI_Domain` 误收了这一条，v2.3 撤除）
+- 撤除 `gstatic.com` → Google 的内联规则：它被 ⑤ 区的 `GEOSITE,google-cn` 提前命中走直连，是死规则
+- v2.1 发布后曾短暂回退到 v2.0，随后以 v2.2 重新发布
+
+---
+
 ## 2026-09-05 — v2.0
 
 仓库从 `Custom_OpenClash_Rules` 迁移至 `Openclash-Config`，不再是上游 fork，许可证由 CC BY-SA 4.0 改为 MIT。

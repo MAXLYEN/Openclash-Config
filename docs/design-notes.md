@@ -20,7 +20,7 @@
                                           └─ 缺失时回源 jsdelivr
 ```
 
-ini 里 117 条 provider 全部指向 `https://cf.210723.xyz/gh/MAXLYEN/Openclash-Rule@main/rules/yaml/`，
+ini 里的 provider（2026-09-24 时为 120 条，`build_ini.py` 输出的调试版那一行会打印当前数量）全部指向 `https://cf.210723.xyz/gh/MAXLYEN/Openclash-Rule@main/rules/yaml/`，
 路径与 jsdelivr 完全一致，nginx 不做改写。**interval 统一 3600**，不再按源分档。
 
 ### 为什么不直连 CDN
@@ -110,25 +110,30 @@ OpenClash 的「Github 加速地址」会改写 provider 的 url
 ②  自建               Self-Hosted
 ③  强制代理/直连      Custom_Proxy → Custom-Made → Custom_Direct
 ④  拦截               Reject / HDOBOXAds / TalkatoneAds
-⑤  精确直连           Lan → GoogleCN → SteamCN → Steam_CDN
+⑤  精确直连           Lan → GoogleCN → SteamCN
                       → games@cn → game-platforms-download
 ⑥  PT                 PT → public-tracker → PrivateTracker
-⑦  泛直连             Direct_Domain → Download
-⑧  平台专属           所有 XXX_Domain + 对应 GEOSITE 兜底
-⑨  泛分类 GEOSITE     communication / social-media / ai / entertainment
+⑦  泛直连             UK-wifi-call → Direct_Domain → Download
+⑧  平台专属           所有 XXX_Domain + 对应 GEOSITE 兜底，ChinaMedia 垫底
+⑨  地区专属           EUNet → UK → SG → US → JP → HK → AU → BR → Tur → IPCheck
+⑩  泛分类 GEOSITE     communication / social-media / ai / entertainment
                       / ecommerce / games / cryptocurrency
-⑩  地区专属           EUNet → UKNet → SGNet → USNet → JPNet → Proxy(HK) → AUNet → BRNet
 ⑪  GFW 兜底           gfw → ProxyGFWlist ×3
 ⑫  国内兜底           China_Domain → cn
 ```
 
+2026-09-12 起地区专属（⑨）与泛分类 GEOSITE（⑩）对调：地区文件先于泛分类兜底匹配。
+
 硬性顺序依赖（改动前务必确认）：
 
 - **地区文件必须在平台专属之后**。放前面会吃掉平台组 —— `US_Domain` 的 AI 关键词曾让 ChatGPT / Copilot / TikTok 三个组完全空转
-- **`Copilot_Domain` 必须在 `OpenAI_Domain` 之前**，否则 26 条被吃掉
+- **`Copilot_Domain` 必须在 `OpenAI_Domain` 之后**。`Copilot_Domain` 有 26 条是 `OpenAI_Domain` 的原样复制（含 `openai.com`、`chatgpt.com`），前置会让 ChatGPT 组空转；`OpenAI_Domain` 不含 bing / msn / copilot 条目，后置不影响 Copilot 命中。v2.0 曾反过来排，v2.1 起改正
 - **`PT_Domain` 必须在 `Direct_Domain` 之前**，否则 100 条被吃掉
-- **`SteamCN` / `Steam_CDN` 必须在 `Steam_Domain` 之前**，国区 Steam 走直连
-- **IP 区的 `Game_IP` 必须在 `Netflix_IP` / `Amazon_IP` 之后**，它的段太宽
+- **`UK-wifi-call_Domain` 必须在 `Direct_Domain` 之前**，否则 `ls.apple.com` 会截走 Apple 地区检测端点 `gspe1-ssl.ls.apple.com`，英国 Wi-Fi 通话被识别为国内
+- **`AppleAI_Domain` 必须在 `Apple_Domain` / `GEOSITE,apple` 之前**，Apple AI 固定走 `USNet`
+- **`ChinaMedia_Domain` 必须在 `GlobalMedia_Domain` 之后**，否则 `bilibili` / `qiyi` 关键字会把 B 站、爱奇艺国际版拉进 Domestic TV
+- **`SteamCN` 必须在 `Steam_Domain` 之前**，国区 Steam 走直连（`Steam_CDN_Domain` 已于 v2.4 摘除，被 `SteamCN_Domain` 完整覆盖）
+- **IP 区的 `Game_IP` 必须在 `Netflix_IP` 之后**，它的段太宽。ini 注释同样要求它在 `Amazon_IP` 之后，但 `Amazon_IP` 改挂 `Proxy` 后目前排在 `Game_IP` 后面，两者重叠的地址段会归 Game Platform
 
 ---
 
@@ -196,7 +201,7 @@ if(filtered_nodelist.empty())
 
 **provider 生成条件**
 
-`ruleset=` 带了更新间隔（`,3600` / `,28800`）才生成 rule-provider，不带则内联展开。生成 provider 时必须满足：
+`ruleset=` 带了更新间隔（如 `,3600`）才生成 rule-provider，不带则内联展开。生成 provider 时必须满足：
 
 - 前缀是 `clash-classic:`（不是 `clash-domain:`）
 - 目标文件是 YAML 格式，根节点为 `payload:` 数组

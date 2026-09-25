@@ -23,11 +23,7 @@ SRC  = os.path.join(ROOT, 'cfg')
 BUILTIN = {'DIRECT', 'REJECT', 'REJECT-TINYGIF'}
 # Go RE2 不支持的语法；正则编译失败会让分组变空，且没有任何报错
 RE2_UNSUPPORTED = (r'(?!', r'(?<!', r'(?<=', r'(?=', r'\1', r'\2')
-# 规则源与更新间隔的约定
-# 两个端点都是 jsdelivr，只是 CDN 厂商不同（Fastly / Cloudflare），
-# 靠端点区分两档更新间隔。注意匹配顺序：fastly 必须先判，
-# 否则 'jsdelivr.net' 会把 fastly 地址也一起匹配上。
-# 规则源统一走自建反代，间隔统一 3600。
+# 规则源与更新间隔的约定：规则源统一走自建反代，间隔统一 3600。
 # 不再按源分档 —— 上游只有 fastly 一个，CDN 那层延迟由 CI 的 purge 消掉，
 # 剩下的延迟只由 interval 决定。
 INTERVAL_CONVENTION = {'cf.210723.xyz': 3600}

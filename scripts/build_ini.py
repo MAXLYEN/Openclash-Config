@@ -37,13 +37,10 @@ KEEP_HEADER = False
 
 # ---------- 调试版产物 ----------
 # 除正式产物外，额外生成一份 <名称>_debug.ini，用于"改完规则想立刻看到效果"的场景。
-# 与正式版的差别只有两处，都只影响送达速度，不影响任何分流行为：
-#
-#   1. 所有规则源改用 fastly.jsdelivr.net
-#      testingcf 是 Cloudflare 套在 Fastly 前面的一层，jsdelivr 的 purge API 清不到
-#      Cloudflare 那一层（实测 cf-cache-status: HIT / Age: 10538），只能等 s-maxage
-#      12 小时自然过期。fastly 直连 Fastly，purge 立即生效（实测 Age: 0）。
-#   2. 所有 provider 的 interval 统一压到 DEBUG_INTERVAL
+# 与正式版的唯一差别：所有 provider 的 interval 统一压到 DEBUG_INTERVAL。
+# 只影响送达速度，不影响任何分流行为。
+# （早期调试版还会把 testingcf 源改写成 fastly；2026-09-06 起规则源已统一为
+#   自建反代，不再需要改写源。）
 #
 # 调试时把 OpenClash 的订阅转换地址指向 dist/<名称>_debug.ini，调完再指回正式版。
 # 注意：调试版会让每个 provider 每 DEBUG_INTERVAL 秒重新下载一次，
@@ -57,17 +54,16 @@ SKIP_DEBUG_MARK = '已停止维护'
 
 
 def make_debug(lines):
-    """把正式产物的行序列改写成调试版。只动 ruleset 行的源与 interval。"""
-    out, n_src, n_iv = [], 0, 0
+    """把正式产物的行序列改写成调试版。只动 provider 行末尾的 interval。"""
+    out, n_iv = [], 0
     for l in lines:
         if l.startswith('ruleset=') and 'clash-classic:' in l:
-            # 源已统一为自建反代，不再需要改写；保留计数字段以兼容输出格式
             l2 = re.sub(r',\d+$', ',%d' % DEBUG_INTERVAL, l)
             if l2 != l:
                 n_iv += 1
             l = l2
         out.append(l)
-    return out, n_src, n_iv
+    return out, n_iv
 
 
 def sha256(text):
@@ -162,12 +158,12 @@ def main():
         # 调试版产物
         dbg_note, dbg_body = '', None
         if EMIT_DEBUG and SKIP_DEBUG_MARK not in '\n'.join(lines[:10]):
-            dbg_lines, n_src, n_iv = make_debug(kept)
+            dbg_lines, n_iv = make_debug(kept)
             dbg_name = name[:-4] + DEBUG_SUFFIX + '.ini'
             dbg_body = '\n'.join(dbg_lines) + '\n'
             if write_if_changed(os.path.join(DIST, dbg_name), dbg_body):
                 dist_updated += 1
-            dbg_note = '    + %s（源改写 %d / interval→%d）' % (dbg_name, n_src, DEBUG_INTERVAL)
+            dbg_note = '    + %s（%d 个 provider 的 interval→%d）' % (dbg_name, n_iv, DEBUG_INTERVAL)
 
         s = stat_lines(kept)
         manifest[name] = {
