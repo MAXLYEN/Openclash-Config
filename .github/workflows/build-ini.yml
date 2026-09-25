@@ -64,4 +64,11 @@ jobs:
           fi
           COUNT=$(git diff --cached --name-only | wc -l)
           git commit -m "chore: 重新生成配置产物（${COUNT} 个文件）" -m "来源提交 ${GITHUB_SHA::7}"
-          git push
+          # 构建期间 main 可能被推进（例如只改 docs/ 的推送，它不触发本 workflow，
+          # 不受 concurrency 保护），直接 push 会被拒。先 rebase 再重试。
+          for i in 1 2 3; do
+            git push && exit 0
+            echo "推送被拒，rebase 后重试（第 ${i} 次）"
+            git pull --rebase origin main
+          done
+          exit 1

@@ -133,7 +133,8 @@ OpenClash 的「Github 加速地址」会改写 provider 的 url
 - **`AppleAI_Domain` 必须在 `Apple_Domain` / `GEOSITE,apple` 之前**，Apple AI 固定走 `USNet`
 - **`ChinaMedia_Domain` 必须在 `GlobalMedia_Domain` 之后**，否则 `bilibili` / `qiyi` 关键字会把 B 站、爱奇艺国际版拉进 Domestic TV
 - **`SteamCN` 必须在 `Steam_Domain` 之前**，国区 Steam 走直连（`Steam_CDN_Domain` 已于 v2.4 摘除，被 `SteamCN_Domain` 完整覆盖）
-- **IP 区的 `Game_IP` 必须在 `Netflix_IP` 之后**，它的段太宽。ini 注释同样要求它在 `Amazon_IP` 之后，但 `Amazon_IP` 改挂 `Proxy` 后目前排在 `Game_IP` 后面，两者重叠的地址段会归 Game Platform
+- **IP 区的 `Game_IP` 必须在 `Netflix_IP` 之后**，它的 /16 段包含 Netflix 的 39 个小段
+- **IP 区的 `Amazon_IP` 必须在 `Game_IP` / `Supercell_IP` / `Blizzard_IP` / `GlobalMedia_IP` 之后**。它是整个 AWS 地址段（挂 `Proxy`），/13~/15 大段包含这四者的大部分条目，前置会把游戏与流媒体流量整块吞进 `Proxy`。v1 时代 Amazon_IP 挂购物组、要求反过来排，已不适用
 
 ---
 

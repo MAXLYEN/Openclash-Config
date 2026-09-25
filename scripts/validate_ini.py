@@ -136,9 +136,11 @@ def check(path):
     for n in graph: dfs(n, [])
 
     # 5. 定义了却没有任何规则指向的分组（节点池与 Auto-Test 类除外：它们靠候选引用）
+    # 已停止维护的文件跳过：死分组无害，而冻结文件里的死分组永远不会被清理
+    # （删掉它会让旧订阅用户的面板少一个组），每次构建都报只是噪音。
     used_by_rule = {g for g, _, _ in rulesets}
     used_by_cand = {c[2:].strip() for cs in groups.values() for c in cs if c.startswith('[]')}
-    for n in order:
+    for n in order if f not in deprecated else []:
         if n not in used_by_rule and n not in used_by_cand:
             warn(f, '分组 %s 既无规则指向也无人引用，是死分组' % n)
 
@@ -178,7 +180,7 @@ def check(path):
     # 8a. provider 主机名必须是自建反代
     # 已停用维护的文件整体跳过本检查：它按定义不会再改，每次构建刷出一百多条
     # 永远不会被处理的告警只会淹没真正需要看的输出。
-    # 结构性检查（死分组、FINAL、循环引用）仍然保留，那些至少描述了现状。
+    # 会导致配置加载失败的结构性检查（FINAL、循环引用、未定义引用）仍然保留。
     if f not in deprecated:
         for g, payload, i in rulesets:
             if payload.startswith('clash-classic:') and RULE_HOST not in payload:
