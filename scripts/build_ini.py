@@ -20,6 +20,11 @@ dist/ 中源文件已消失的产物**只告警不删除** —— 那是别人�
 """
 import os, re, sys, json, hashlib, datetime
 
+# Windows 下输出经管道时编码是 GBK，打印 ⚠ 会抛 UnicodeEncodeError 中断脚本。
+# 保留原编码（不破坏中文显示），只把编不出的字符替换掉。
+for _s in (sys.stdout, sys.stderr):
+    _s.reconfigure(errors='replace')
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'cfg')
 DIST = os.path.join(ROOT, 'dist')
@@ -72,6 +77,16 @@ def sha256(text):
 def is_comment(line):
     s = line.strip()
     return bool(s) and s.startswith(COMMENT_PREFIX)
+
+
+def parser_view(lines):
+    """subconverter 眼中的有效行序列：逐行 trim 后丢弃空行与行首注释（ini_reader.h:253）。"""
+    out = []
+    for l in lines:
+        s = l.strip()
+        if s and not s.startswith(COMMENT_PREFIX):
+            out.append(s)
+    return out
 
 
 def read_normalized(path):
@@ -132,24 +147,25 @@ def main():
             stamp = ';%s | built %s' % (name[:-4], datetime.date.today().isoformat())
             kept.insert(0, stamp)
 
-        # 自检：产物与源文件在解析器眼中必须逐行等价
-        # subconverter 忽略空行与行首注释，所以剥离后的有效行序列应当完全一致
-        effective = [l for l in lines if l and not is_comment(l)]
-        if effective != [l for l in kept if not (KEEP_HEADER and l is kept[0] and is_comment(l))]:
-            sys.exit('自检失败：%s 的产物与源文件有效行不一致，构建中止' % name)
-
         dist_path = os.path.join(DIST, name)
         body = '\n'.join(kept) + '\n'
+
+        # 自检：产物与源文件在解析器眼中必须逐行等价
+        # 对最终写盘的文本独立模拟一遍 subconverter 的读取，不复用上面的剥离表达式，
+        # 否则比较的是同一个东西，永远相等。以后若有人改动剥离逻辑（例如按 ; 截断行），
+        # 这里会拦下。
+        if parser_view(lines) != parser_view(body.split('\n')):
+            sys.exit('自检失败：%s 的产物与源文件有效行不一致，构建中止' % name)
         if write_if_changed(dist_path, body):
             dist_updated += 1
 
         # 调试版产物
-        dbg_note = ''
+        dbg_note, dbg_body = '', None
         if EMIT_DEBUG and SKIP_DEBUG_MARK not in '\n'.join(lines[:10]):
             dbg_lines, n_src, n_iv = make_debug(kept)
             dbg_name = name[:-4] + DEBUG_SUFFIX + '.ini'
-            if write_if_changed(os.path.join(DIST, dbg_name),
-                                '\n'.join(dbg_lines) + '\n'):
+            dbg_body = '\n'.join(dbg_lines) + '\n'
+            if write_if_changed(os.path.join(DIST, dbg_name), dbg_body):
                 dist_updated += 1
             dbg_note = '    + %s（源改写 %d / interval→%d）' % (dbg_name, n_src, DEBUG_INTERVAL)
 
@@ -164,6 +180,8 @@ def main():
             'rulesets':    s['ruleset'],
             'groups':      s['group'],
         }
+        if dbg_body is not None:
+            manifest[name]['debug_sha256'] = sha256(dbg_body)
         print('%-32s %4d 行 -> %4d 行  (%d ruleset / %d group)  省 %d%%'
               % (name, len(lines), len(kept), s['ruleset'], s['group'],
                  round(100 * (1 - manifest[name]['dist_bytes'] / manifest[name]['src_bytes']))))
@@ -178,10 +196,22 @@ def main():
             print('  ⚠ dist/%s 在 cfg/ 中已无对应源文件。'
                   '未删除 —— 可能仍有订阅在引用该 URL。确认无人使用后手动删除。' % f)
 
-    write_if_changed(os.path.join(DIST, 'manifest.json'),
-                     json.dumps({'built_at': datetime.datetime.now(datetime.timezone.utc)
-                                              .isoformat(timespec='seconds'),
-                                 'files': manifest},
+    # built_at 只在内容真正变化时刷新。否则每次 CI（定时任务、规则库 dispatch）
+    # 都会因为时间戳不同而产生一条只改了 manifest 的空提交。
+    # 按 sha256 判定而不是按 dist_updated：Windows 检出的 CRLF 被规范化成 LF 时
+    # 文件会被重写，但内容没变，不应刷新时间戳。
+    manifest_path = os.path.join(DIST, 'manifest.json')
+    built_at = None
+    try:
+        old = json.load(open(manifest_path, encoding='utf-8'))
+        if old.get('files') == manifest:
+            built_at = old.get('built_at')
+    except (OSError, ValueError):
+        pass
+    if not built_at:
+        built_at = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
+    write_if_changed(manifest_path,
+                     json.dumps({'built_at': built_at, 'files': manifest},
                                 ensure_ascii=False, indent=2) + '\n')
     print('\n源文件规范化：%d 个    产物更新：%d 个' % (src_fixed, dist_updated))
 

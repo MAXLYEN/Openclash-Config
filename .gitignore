@@ -29,3 +29,6 @@ CLAUDE.local.md
 .env.*
 *.private.*
 private/
+.codex/
+.gemini/
+GEMINI.md

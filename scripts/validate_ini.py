@@ -12,6 +12,11 @@
 """
 import os, re, sys, time, argparse, urllib.request, concurrent.futures
 
+# Windows 下输出经管道时编码是 GBK，打印 ⚠ ✗ 会抛 UnicodeEncodeError，
+# 让本已通过的校验以退出码 1 结束。保留原编码，只把编不出的字符替换掉。
+for _s in (sys.stdout, sys.stderr):
+    _s.reconfigure(errors='replace')
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, 'cfg')
 
