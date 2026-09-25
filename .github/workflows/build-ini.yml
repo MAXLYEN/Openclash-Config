@@ -67,7 +67,7 @@ jobs:
           python3 scripts/validate_ini.py --online --strict-empty $REF_ARG
 
       - name: 提交产物
-        # /tmp/pushed 标记「本地 HEAD 已在远端」，供下一步通知判断：
+        # /tmp/pushed 标记「本地 HEAD 已在远端」，供后续步骤判断：
         # 无变化时 HEAD 就是 GITHUB_SHA，本来就在远端；推送成功后同理。
         # 推送失败时不写 —— 本地 HEAD 不在远端，Rule 按提交号读 raw 会 404。
         run: |
@@ -80,7 +80,6 @@ jobs:
             exit 0
           fi
           COUNT=$(git diff --cached --name-only | wc -l)
-          CHANGED_INI=$(git diff --cached --name-only -- 'dist/*.ini')
           git commit -m "chore: 重新生成配置产物（${COUNT} 个文件）" -m "来源提交 ${GITHUB_SHA::7}"
           # 构建期间 main 可能被推进（例如只改 docs/ 的推送，它不触发本 workflow，
           # 不受 concurrency 保护），直接 push 会被拒。先 rebase 再重试；
@@ -93,9 +92,57 @@ jobs:
           done
           [ "$PUSHED" = 1 ] || exit 1
           echo ok > /tmp/pushed
-          # 清除 jsdelivr 缓存，让 README 里的 fastly 镜像地址立即拿到新配置。
-          # 只清 fastly 这一层；testingcf 前面的 Cloudflare 缓存清不到（见 docs/design-notes.md）。
-          # 清缓存失败不影响发布，只影响镜像地址的新鲜度。
+
+      - name: 比对远端 dist 变化
+        # 清缓存与通知 Openclash-Rule 都以「本次运行前后，远端 main 上的 dist/*.ini
+        # 是否变化」为准，而不是 bot 自己的提交里有没有它：改配置时，会话通常在本地
+        # 跑过 build_ini.py，把 cfg/ 与 dist/ 一起推上来，bot 随后只改
+        # dist/manifest.json 或无可提交。只看 bot 提交会同时漏掉两件事 ——
+        # 例如 9fa077f、18782dd 自带 dist/Custom_Clash_V2.ini，其后的 bot 提交
+        # 28fb5e0 / c0a4f1d 只改了 manifest，Rule 没收到通知；54baa87 自带
+        # dist/Custom_Clash.ini，bot 无可提交，jsdelivr 缓存没有清。
+        # 基准 BASE：push 用推送前的远端 tip（event.before）；
+        # 其他触发（repository_dispatch / schedule / workflow_dispatch）用 GITHUB_SHA，
+        # 此时只有 bot 提交可能改变 dist。
+        # 输出 ini：有变化的 dist/*.ini，空格分隔；未推送到远端时为空。
+        id: dist
+        if: always()
+        env:
+          EVENT_BEFORE: ${{ github.event_name == 'push' && github.event.before || '' }}
+        run: |
+          if [ ! -f /tmp/pushed ]; then
+            echo "本地 HEAD 未推送到远端，跳过比对"
+            exit 0
+          fi
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            BASE="$EVENT_BEFORE"
+          else
+            BASE="$GITHUB_SHA"
+          fi
+          if [ -n "$BASE" ] && [ "$BASE" != 0000000000000000000000000000000000000000 ]; then
+            # checkout 是浅克隆，event.before 通常不在本地；diff 只需两端的树，单独取回即可
+            git cat-file -e "$BASE^{commit}" 2>/dev/null \
+              || git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
+          fi
+          if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            INI=$(git diff --name-only "$BASE" HEAD -- 'dist/*.ini' | tr '\n' ' ')
+            echo "相对 ${BASE::7} 有变化：${INI:-无}"
+          else
+            # 无基准（新分支）或取不到（被强推覆盖后已不可达）：视为全部变化
+            INI=$(ls dist/*.ini | tr '\n' ' ')
+            echo "基准 ${BASE:-（无）} 不可用，视为全部变化：${INI}"
+          fi
+          echo "ini=${INI% }" >> "$GITHUB_OUTPUT"
+
+      - name: 清除 jsdelivr 缓存
+        # 让 README 里的 fastly 镜像地址立即拿到新配置。
+        # 只清 fastly 这一层；testingcf 前面的 Cloudflare 缓存清不到（见 docs/design-notes.md）。
+        # 清缓存失败不影响发布，只影响镜像地址的新鲜度。
+        if: always() && steps.dist.outputs.ini != ''
+        continue-on-error: true
+        env:
+          CHANGED_INI: ${{ steps.dist.outputs.ini }}
+        run: |
           for f in $CHANGED_INI; do
             if curl -fsS --max-time 20 -o /dev/null "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@main/${f}"; then
               echo "已清缓存：${f}"
@@ -108,55 +155,17 @@ jobs:
         # 规则链顺序变化后，规则库的冗余分析（dedupe.yml）需要按新配置重跑。
         # 对方读取 client_payload.sha 对应提交的 dist/Custom_Clash_V2.ini，只出报告不提交；
         # 对方的 build 只在 rules/list 或 scripts 变化时触发，因此不会形成循环。
-        #
-        # 判断依据是「本次运行前后，远端 main 上的 dist/Custom_Clash_V2.ini 是否变化」，
-        # 而不是 bot 自己的提交里有没有它：改规则顺序时，会话通常在本地跑过 build_ini.py，
-        # 把 cfg/ 与 dist/ 一起推上来，bot 随后只改 dist/manifest.json（或无可提交）。
-        # 例如 9fa077f（后移 ChinaMedia_Domain）、18782dd（前移 UK-wifi-call_Domain）
-        # 都自带 dist/Custom_Clash_V2.ini，其后的 bot 提交 28fb5e0 / c0a4f1d 只改了 manifest。
-        # 基准 BASE：push 用推送前的远端 tip（event.before）；
-        # 其他触发（repository_dispatch / schedule / workflow_dispatch）用 GITHUB_SHA，
-        # 此时只有 bot 提交可能改变 dist。
-        # 发送的是 HEAD：已由上一步的 /tmp/pushed 确认在远端（中途 rebase 过也是推送后的提交号）。
+        # 是否变化由上一步「比对远端 dist 变化」判断。
+        # 发送的是 HEAD：已由「提交产物」的 /tmp/pushed 确认在远端（中途 rebase 过也是推送后的提交号）。
         #
         # 需要在本仓库 Settings → Secrets and variables → Actions 添加 RULE_DISPATCH_TOKEN：
         # 一个 fine-grained PAT，仓库范围选 MAXLYEN/Openclash-Rule，
         # 权限 Contents: Read and write。GITHUB_TOKEN 无法跨仓库触发 workflow。
-        if: always()
+        if: always() && contains(format(' {0} ', steps.dist.outputs.ini), ' dist/Custom_Clash_V2.ini ')
         continue-on-error: true
         env:
           RULE_DISPATCH_TOKEN: ${{ secrets.RULE_DISPATCH_TOKEN }}
-          EVENT_BEFORE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: |
-          if [ ! -f /tmp/pushed ]; then
-            echo "本地 HEAD 未推送到远端，无需通知"
-            exit 0
-          fi
-          if [ "$GITHUB_EVENT_NAME" = push ]; then
-            BASE="$EVENT_BEFORE"
-          else
-            BASE="$GITHUB_SHA"
-          fi
-          CHANGED=0
-          if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ]; then
-            echo "无推送前基准（新分支），视为有变化"
-            CHANGED=1
-          else
-            # checkout 是浅克隆，event.before 通常不在本地；diff 只需两端的树，单独取回即可。
-            # 取不到（例如被强推覆盖后已不可达）同样视为有变化
-            git cat-file -e "$BASE^{commit}" 2>/dev/null \
-              || git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
-            if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-              echo "基准 ${BASE} 不可用，视为有变化"
-              CHANGED=1
-            elif ! git diff --quiet "$BASE" HEAD -- dist/Custom_Clash_V2.ini; then
-              CHANGED=1
-            fi
-          fi
-          if [ "$CHANGED" != 1 ]; then
-            echo "dist/Custom_Clash_V2.ini 相对 ${BASE::7} 未变化，无需通知"
-            exit 0
-          fi
           if [ -z "$RULE_DISPATCH_TOKEN" ]; then
             echo "未配置 RULE_DISPATCH_TOKEN，跳过通知"
             exit 0
