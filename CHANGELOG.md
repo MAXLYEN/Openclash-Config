@@ -6,6 +6,17 @@
 
 ---
 
+## 2026-09-25 — v2.11
+
+引用 Openclash-Rule `7e62bd7` 新增的两个规则集，把 v2.10 撤除内联规则后遗留的归属问题在规则内容层面补回：
+
+- 新增 `CryptoCom_Domain` → Cryptocurrency，排在 ⑧ 金融区 `OKX_Domain` 之前。`crypto.com` 已从 `SG_Domain` 停用，此前由 ⑩ 区 `GEOSITE,category-cryptocurrency` 兜底进 Cryptocurrency（结果正确但依赖 geodata），现由规则集直接命中
+- 新增 `HuluJP_Domain` → JPNet，排在 `Hulu_Domain` / `GEOSITE,disney` 之前。日本 Hulu 需要日本 IP，此前 `hulu.jp` 落到 `GEOSITE,disney`（Disney+），`happyon.jp`、`hjholdings.jp`、`streaks.jp`、`yb.uncn.jp`、`prod.hjholdings.tv` 落到 `GlobalMedia_Domain`（Global TV），都不是日本出口。这 6 条已从 `Hulu_Domain` 停用
+- 成对的 `CryptoCom_IP` / `HuluJP_IP` 是空占位，按 `OKX_IP` / `Bybit_IP` / `Hulu_IP` / `Disney_IP` 的惯例不引用
+- `docs/design-notes.md` 第三节补充两条顺序依赖；`docs/troubleshooting.md` 验证清单更新 `crypto.com`，新增 `www.hulu.jp`
+
+---
+
 ## 2026-09-25 — v2.10
 
 明确分工：本仓库只决定规则顺序与引用哪些规则集，域名 / IP 等规则内容一律放 Openclash-Rule。

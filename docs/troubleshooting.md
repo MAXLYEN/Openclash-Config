@@ -127,11 +127,12 @@ OpenClash 日志搜 `RuleSet(`，逐条核对：
 | `amazon.co.uk` | `RuleSet(Amazon_Domain)` | Shopping Platform |
 | `shopee.com.sg` | `RuleSet(Shopee_Domain)` | Shopping Platform |
 | `www.gstatic.com` | `GeoSite(google-cn)` | Global Direct（预期行为，国内 CDN 直连更快；内联规则已于 v2.2 撤除） |
-| `crypto.com` | `RuleSet(SG_Domain)` | SGNet（v2.10 撤除内联规则后的现状；待 Openclash-Rule 提供 Cryptocurrency 规则集后改回 Cryptocurrency） |
+| `crypto.com` | `RuleSet(CryptoCom_Domain)` | Cryptocurrency（落到 `GeoSite(category-cryptocurrency)` 说明规则集没加载） |
 | `www.dbs.com.sg` | `RuleSet(SG_Domain)` | SGNet |
 | `store.steampowered.com` | `RuleSet(Steam_Domain)` | Steam |
 | `gspe1-ssl.ls.apple.com` | `RuleSet(UK-wifi-call_Domain)` | UKNet（落到 `Direct_Domain` 说明它没排在前面） |
 | `apple-relay.apple.com` | `RuleSet(AppleAI_Domain)` | USNet（落到 `Apple_Domain` 说明顺序反了） |
+| `www.hulu.jp` | `RuleSet(HuluJP_Domain)` | JPNet（落到 `GeoSite(disney)` 说明顺序反了） |
 | `www.bilibili.tv` | `RuleSet(GlobalMedia_Domain)` | Global TV（落到 `ChinaMedia_Domain` 说明顺序反了） |
 
 面板确认：换一个配置文件名强制丢弃 history 后，`Proxy` 显示香港节点、`USNet` 显示美国节点、`Cryptocurrency` 显示新加坡节点、`UKNet` 显示英国节点。

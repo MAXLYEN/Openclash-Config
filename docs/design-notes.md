@@ -158,7 +158,9 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 - **`PT_Domain` 必须在 `Direct_Domain` 之前**，否则 100 条被吃掉
 - **`UK-wifi-call_Domain` 必须在 `Direct_Domain` 之前**，否则 `ls.apple.com` 会截走 Apple 地区检测端点 `gspe1-ssl.ls.apple.com`，英国 Wi-Fi 通话被识别为国内
 - **`AppleAI_Domain` 必须在 `Apple_Domain` / `GEOSITE,apple` 之前**，Apple AI 固定走 `USNet`
+- **`CryptoCom_Domain` 在 `OKX_Domain` 之前**，与 Cryptocurrency 组其余规则集同在 ⑧ 金融区。`crypto.com` 单独成集，不混进 OKX / Binance 规则集；未收录的币圈域名仍由 ⑩ 区 `GEOSITE,category-cryptocurrency` 兜底。v2.11 起
 - **`Hulu_Domain` 必须在 `Disney_Domain` / `GEOSITE,disney` 之前**。geosite:disney（v2fly 与 MetaCubeX 均如此）收录了全部 48 条 Hulu 域名（`+.hulu.com`、`+.hulu.jp`、`huluim`、`callhulu` 等），`Disney_Domain` 也有 `hulu.playback.edge.bamgrid.com`；排在后面时 Hulu 组完全空转，Hulu 走 Disney+ 组（默认香港）而 Hulu 只在美国可用。`Hulu_Domain` 里的 `112263.com`、`findyourlimits.com` 等在 geosite:disney 中也是作为 Hulu 条目出现的，前置不会截走 Disney 本身的域名。v2.9 起改正
+- **`HuluJP_Domain` 必须在 `Hulu_Domain` 与 `GEOSITE,disney` 之前**。日本 Hulu（`hulu.jp`、`happyon.jp`、`hjholdings.jp`、`streaks.jp` 等）需要日本 IP，归锚点组 `JPNet`（仅共用地区节点，先例 `AppleAI_Domain` → `USNet`）。geosite:disney 含 `+.hulu.jp`，排在它后面永远命中不到；`hulu.jp` 以外的 5 个域名此前落进 `GlobalMedia_Domain`（Global TV）。v2.11 起
 - **⑩ 区 `category-games-!cn` 必须在 `category-entertainment` 之前**。后者收录了游戏分类的绝大部分条目（`category-games` 1123 条中 859 条），排在后面时本地游戏列表未收录的游戏域名（`epicgamescdn.com`、`diablo.com`、`ubistatic*-a.akamaihd.net` 等 353 条）落进 Global TV，Game Platform 切地区 / 直连时不跟着切。v2.9 起改正
 - **⑩ 区用 `category-games-!cn` 而不是 `category-games`**。`category-games` = `category-games-cn` ∪ `category-games-!cn`，cn 部分（`17173.com`、`4399.com`、`37.com` 等）不带 `@cn` 属性，⑤ 区的 `category-games@cn` 截不住，又因⑩早于⑫，会被带进 Game Platform（默认香港）。改用 `-!cn` 后 237 个国内游戏站交给 `China_Domain` / `GEOSITE,cn` 直连。该分类 v2fly 自 2025-06-05 起才有，路由器的 geosite.dat 早于此时整份配置会加载失败
 - **`ChinaMedia_Domain` 必须在 `GlobalMedia_Domain` 之后**，否则 `bilibili` / `qiyi` 关键字会把 B 站、爱奇艺国际版拉进 Domestic TV
@@ -217,7 +219,7 @@ if((!lineSize || strLine[0] == ';' || strLine[0] == '#' ||
 本仓库只决定顺序和引用哪些规则集。内联条目会绕开规则库的构建、校验与冗余分析，
 两边对同一域名的归属迟早对不上。需要定点修正时，在 Openclash-Rule 里改规则内容
 （必要时新建规则集，再回到本仓库引用）。`validate_ini.py` 会把内联内容规则报为 ERROR。
-v2.10 撤除了此前仅有的两条（`crypto.com`、`notnetflix.cos.cat`）。
+v2.10 撤除了此前仅有的两条（`crypto.com`、`notnetflix.cos.cat`），两者后来都在规则内容层面接回：`crypto.com` 由 `CryptoCom_Domain`（v2.11 引用），`notnetflix.cos.cat` 由 `Emby_Domain` 命中（Openclash-Rule `7e62bd7` 停用了 `Netflix_Domain` 的 `DOMAIN-KEYWORD,netflix`）。
 
 **空分组处理**（`src/generator/config/subexport.cpp`）
 
