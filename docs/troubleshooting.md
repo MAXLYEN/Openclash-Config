@@ -126,10 +126,13 @@ OpenClash 日志搜 `RuleSet(`，逐条核对：
 | `copilot.microsoft.com` | `RuleSet(Copilot_Domain)` | Copilot |
 | `amazon.co.uk` | `RuleSet(Amazon_Domain)` | Shopping Platform |
 | `shopee.com.sg` | `RuleSet(Shopee_Domain)` | Shopping Platform |
-| `www.gstatic.com` | 内联规则 | Google |
+| `www.gstatic.com` | `GeoSite(google-cn)` | Global Direct（预期行为，国内 CDN 直连更快；内联规则已于 v2.2 撤除） |
 | `crypto.com` | 内联规则 | Cryptocurrency |
 | `www.dbs.com.sg` | `RuleSet(SG_Domain)` | SGNet |
 | `store.steampowered.com` | `RuleSet(Steam_Domain)` | Steam |
+| `gspe1-ssl.ls.apple.com` | `RuleSet(UK-wifi-call_Domain)` | UKNet（落到 `Direct_Domain` 说明它没排在前面） |
+| `apple-relay.apple.com` | `RuleSet(AppleAI_Domain)` | USNet（落到 `Apple_Domain` 说明顺序反了） |
+| `www.bilibili.tv` | `RuleSet(GlobalMedia_Domain)` | Global TV（落到 `ChinaMedia_Domain` 说明顺序反了） |
 
 面板确认：换一个配置文件名强制丢弃 history 后，`Proxy` 显示香港节点、`USNet` 显示美国节点、`Cryptocurrency` 显示新加坡节点、`UKNet` 显示英国节点。
 

@@ -187,7 +187,12 @@ def main():
     # dist 中的孤儿产物：告警，不删除
     for f in sorted(os.listdir(DIST)) if os.path.isdir(DIST) else []:
         if f.endswith(DEBUG_SUFFIX + '.ini'):
-            continue          # 调试版是派生产物，cfg/ 里本就没有对应源文件
+            # 调试版是派生产物，按其正式版的源文件判断
+            base = f[:-len(DEBUG_SUFFIX + '.ini')] + '.ini'
+            if base not in names:
+                print('  ⚠ dist/%s 的源文件 cfg/%s 已不存在。调试版只用于临时排查，'
+                      '确认无人使用后手动删除。' % (f, base))
+            continue
         if f.endswith('.ini') and f not in names:
             print('  ⚠ dist/%s 在 cfg/ 中已无对应源文件。'
                   '未删除 —— 可能仍有订阅在引用该 URL。确认无人使用后手动删除。' % f)

@@ -17,11 +17,13 @@ OpenClash 订阅转换用的**外部配置模板**（subconverter `&config=` 参
 https://raw.githubusercontent.com/MAXLYEN/Openclash-Config/main/dist/Custom_Clash_V2.ini
 ```
 
-jsdelivr 镜像：
+jsdelivr 镜像（GitHub 访问不畅时使用）：
 
 ```
-https://testingcf.jsdelivr.net/gh/MAXLYEN/Openclash-Config@main/dist/Custom_Clash_V2.ini
+https://fastly.jsdelivr.net/gh/MAXLYEN/Openclash-Config@main/dist/Custom_Clash_V2.ini
 ```
+
+配置更新后 CI 会自动清除该地址的缓存。不建议用 `testingcf.jsdelivr.net`：它前面还有一层 Cloudflare 缓存，清不掉，配置更新可能延迟 12 小时以上生效。
 
 填入 OpenClash → 配置订阅 → 订阅转换 → 自定义配置文件地址。作为 `&config=` 参数手动拼 URL 时需要先做 URLEncode。
 
@@ -62,7 +64,7 @@ Layer 2  平台组（select）      Netflix / ChatGPT / Cryptocurrency / Steam /
 | 锚点 | 承载内容 |
 |---|---|
 | `Proxy` | 香港，通用与低延迟场景 |
-| `USNet` | 美国，流媒体与 AI |
+| `USNet` | 美国，AI 与美区专属服务（Hulu / PrimeVideo / Spotify 等） |
 | `SGNet` | 新加坡，亚洲金融与虚拟币 |
 | `JPNet` | 日本，含无专用节点地区的挂靠（如菲律宾） |
 | `UKNet` | 英国，仅本地服务 |

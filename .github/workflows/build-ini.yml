@@ -50,8 +50,9 @@ jobs:
         # 不应该卡住本仓库的配置发布。
         # 但由 Openclash-Rule 的 repository_dispatch 或定时任务触发时必须报错，
         # 这两种场景的唯一目的就是发现引用断裂。
+        # --strict-empty：规则集被去重流程清空时同样报错，而不是只告警。
         continue-on-error: ${{ github.event_name == 'push' }}
-        run: python3 scripts/validate_ini.py --online
+        run: python3 scripts/validate_ini.py --online --strict-empty
 
       - name: 提交产物
         run: |
@@ -63,12 +64,24 @@ jobs:
             exit 0
           fi
           COUNT=$(git diff --cached --name-only | wc -l)
+          CHANGED_INI=$(git diff --cached --name-only -- 'dist/*.ini')
           git commit -m "chore: 重新生成配置产物（${COUNT} 个文件）" -m "来源提交 ${GITHUB_SHA::7}"
           # 构建期间 main 可能被推进（例如只改 docs/ 的推送，它不触发本 workflow，
           # 不受 concurrency 保护），直接 push 会被拒。先 rebase 再重试。
+          PUSHED=0
           for i in 1 2 3; do
-            git push && exit 0
+            if git push; then PUSHED=1; break; fi
             echo "推送被拒，rebase 后重试（第 ${i} 次）"
             git pull --rebase origin main
           done
-          exit 1
+          [ "$PUSHED" = 1 ] || exit 1
+          # 清除 jsdelivr 缓存，让 README 里的 fastly 镜像地址立即拿到新配置。
+          # 只清 fastly 这一层；testingcf 前面的 Cloudflare 缓存清不到（见 docs/design-notes.md）。
+          # 清缓存失败不影响发布，只影响镜像地址的新鲜度。
+          for f in $CHANGED_INI; do
+            if curl -fsS --max-time 20 -o /dev/null "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@main/${f}"; then
+              echo "已清缓存：${f}"
+            else
+              echo "::warning::清缓存失败：${f}"
+            fi
+          done

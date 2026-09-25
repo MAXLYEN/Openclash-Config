@@ -1,0 +1,4 @@
+# 仓库与工作区统一使用 LF。
+# 不设置时，Windows 的 core.autocrlf=true 会让检出的文件变成 CRLF，
+# 本地运行 build_ini.py 会把 cfg/ 与 dist/ 全部重写为 LF，工作区出现大量无内容差异的修改。
+* text=auto eol=lf

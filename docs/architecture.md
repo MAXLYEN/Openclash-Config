@@ -25,7 +25,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 
 - 改一个地区的出口只需要动 Layer 1 的一个组，所有引用它的平台组同步生效
 - 加一个新地区只需要加一个节点池 + 一个锚点
-- 平台组的候选列表从 10 项降到 4~5 项
+- 平台组的候选只含锚点组（3~10 项），不再直接列节点池与 `.*`
 
 约束：
 
@@ -38,10 +38,10 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 
 | 锚点 | 节点池 | 承载内容 |
 |---|---|---|
-| `Proxy` | 🇭🇰 HK | 香港，通用与低延迟场景；社交、开发、购物、游戏平台的默认出口 |
-| `USNet` | 🇺🇸 US | 美国，流媒体与 AI；美国本土金融与 VoIP |
+| `Proxy` | 🇭🇰 HK | 香港，通用与低延迟场景；主流流媒体（Netflix / Disney+ / HBO）、社交、开发、游戏平台的默认出口 |
+| `USNet` | 🇺🇸 US | 美国，AI 与美区专属服务（Hulu / PrimeVideo / Spotify / TikTok / X / 购物）；美国本土金融与 VoIP |
 | `SGNet` | 🇸🇬 SG | 新加坡，亚洲金融分流中心，亚洲虚拟币业务平台基本都走这里 |
-| `JPNet` | 🇯🇵 JP | 日本本地服务；**没有专用节点的地区统一挂靠这里**（如菲律宾，内容已并入 `JP_Domain`） |
+| `JPNet` | 🇯🇵 JP | 日本本地服务，以及 YouTube / Emby / 即时通讯的默认出口；**没有专用节点的地区统一挂靠这里**（如菲律宾，内容已并入 `JP_Domain`） |
 | `UKNet` | 🇬🇧 UK | 英国，**只放本地服务**（银行、Britbox、UK 媒体），不承担通用代理 |
 | `EUNet` | 🇩🇪 DE | 欧洲 |
 | `AUNet` | 🇦🇺 AU | 大洋洲 |
@@ -70,16 +70,19 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 
 | 平台组 | 第一候选 | 依据 |
 |---|---|---|
-| Netflix / Disney+ / HBO / Hulu / PrimeVideo / Apple TV+ / Global TV | `USNet` | 美国承载流媒体 |
-| YouTube / Spotify | `USNet` | 同上 |
-| ChatGPT / Copilot / TikTok / Talkatone / Paypal | `USNet` | 美国承载 AI |
-| Cryptocurrency | `SGNet` | 新加坡是亚洲金融分流中心 |
+| Netflix / Disney+ / HBO / Apple TV+ / Global TV | `Proxy` | 港区内容库，低延迟 |
+| Hulu / PrimeVideo / Spotify | `USNet` | 美区专属服务 |
 | Emby | `JPNet` | Emby 服务器在日本 |
-| Google / Google FCM | `SGNet` | — |
+| YouTube / Instant Messaging | `JPNet` | 日本节点 |
+| ChatGPT / Copilot | `USNet` | 美国承载 AI（候选不含 `Proxy`，香港不在服务区） |
+| TikTok / Twitter(X) / Snapchat / Shopping Platform | `USNet` | 美区服务 |
+| Talkatone / Paypal | `USNet` | 仅美 / 英 / 欧候选 |
+| Cryptocurrency / Google / Google FCM | `SGNet` | 新加坡是亚洲金融分流中心 |
 | Bahamut | `Proxy` | 台湾站，港节点最近 |
-| Telegram / Instant Messaging / Twitter(X) / Social Media | `Proxy` | 延迟优先 |
-| GitHub / Microsoft / Apple / Speedtest / Shopping Platform | `Proxy` | 延迟优先 |
+| Telegram / Social Media | `Proxy` | 延迟优先 |
+| GitHub / Microsoft / Apple / Speedtest | `Proxy` | 延迟优先 |
 | Game Platform / Steam | `Proxy` | 第二候选 `Global Direct` |
+| UnpopularNet / Others | `Proxy` | `Others` 即 `[]FINAL` 兜底 |
 | PT | `Global Direct` | PT 必须走本地出口 |
 | Netease / Xiaomi / Domestic TV | `Global Direct` | 国区服务 |
 | Self-Hosted / Custom-Made | `Global Direct` | 默认直连，被墙时面板切代理 |

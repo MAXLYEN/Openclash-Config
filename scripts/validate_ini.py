@@ -62,11 +62,35 @@ def err(f, msg):
 def warn(f, msg): warns.append('%s: %s' % (f, msg))
 
 
+# subconverter 读取外部配置 [custom] 段时识别的键（handler/settings.cpp 的 loadExternalConfig）。
+# 前缀类用 ini.get_all()，按 key.find(name) == 0 匹配；精确类用 get_if_exist()。
+PREFIX_KEYS = ('ruleset', 'surge_ruleset', 'custom_proxy_group', 'rename', 'emoji',
+               'include_remarks', 'exclude_remarks')
+EXACT_KEYS = {'enable_rule_generator', 'overwrite_original_rules', 'add_emoji', 'remove_old_emoji',
+              'clash_rule_base', 'surge_rule_base', 'surfboard_rule_base', 'mellow_rule_base',
+              'quan_rule_base', 'quanx_rule_base', 'loon_rule_base', 'sssub_rule_base',
+              'singbox_rule_base'}
+
+
+def check_key(f, i, key):
+    """[custom] 段的键名检查。
+    历史事故：旧配置里一行 `:ruleset=Asia,...` 把注释符 ; 误写成 :，subconverter 不认识
+    `:ruleset` 于是整行被静默忽略，Asia 组因此从未有过规则。"""
+    if key in EXACT_KEYS or key in PREFIX_KEYS:
+        return
+    hit = next((p for p in PREFIX_KEYS if key.startswith(p)), None)
+    if hit:
+        warn(f, '第 %d 行键名 %s 不是标准写法，但 subconverter 会按前缀把它当作 %s 生效' % (i, key, hit))
+    else:
+        warn(f, '第 %d 行键名 %s 不被 subconverter 识别，整行会被静默忽略（笔误？）' % (i, key))
+
+
 def parse(path):
     groups, order = {}, []          # name -> [candidate, ...]
     rulesets = []                   # (group, payload, lineno)
     settings = {}
     section = None
+    f = os.path.basename(path)
     for i, raw in enumerate(open(path, encoding='utf-8'), 1):
         line = raw.strip()
         if not line or line.startswith((';', '#', '//')):
@@ -75,17 +99,23 @@ def parse(path):
             section = line[1:-1]
             continue
         if '=' not in line:
+            if section == 'custom':
+                warn(f, '第 %d 行缺少 =，subconverter 不会把它当作任何配置项：%s' % (i, line[:60]))
             continue
         key, val = line.split('=', 1)
         key = key.strip()
-        if key == 'ruleset':
+        if section == 'custom':
+            check_key(f, i, key)
+        # 与 subconverter 一致按前缀归类（get_all 用的是 find(key) == 0），
+        # 否则 ruleset2= 这类行会被 subconverter 生效、却被本脚本漏看
+        if key.startswith('ruleset'):
             g, _, payload = val.partition(',')
             rulesets.append((g.strip(), payload.strip(), i))
-        elif key == 'custom_proxy_group':
+        elif key.startswith('custom_proxy_group'):
             parts = val.split('`')
             name = parts[0].strip()
             if name in groups:
-                err(os.path.basename(path), '第 %d 行 策略组重名：%s' % (i, name))
+                err(f, '第 %d 行 策略组重名：%s' % (i, name))
             groups[name] = parts[1:]
             order.append(name)
         else:
@@ -207,10 +237,14 @@ def check(path):
     return len(rulesets), len(groups)
 
 
-def check_online(path):
+def check_online(path, strict_empty=False):
     """拉取每个 provider 产物，确认是 payload: 结构。
     历史事故：166 个 provider 引用的是纯文本 .list，加载成功但规则数为 0，
-    流量全部落到 GeoSite 兜底，因为兜底大多也能导向正确分组，问题被长期掩盖。"""
+    流量全部落到 GeoSite 兜底，因为兜底大多也能导向正确分组，问题被长期掩盖。
+
+    strict_empty：不在白名单里的空规则集记为 ERROR 而非 WARN。
+    规则库的去重流程会把被完全覆盖的规则集注释成空文件（Steam_CDN、Nintendo_IP 都是这样变空的），
+    只告警时 CI 仍是绿的，只能靠人工发现。"""
     f = os.path.basename(path)
     urls = []
     for raw in open(path, encoding='utf-8'):
@@ -246,7 +280,9 @@ def check_online(path):
                     # 并在对应 .list 的 header 里写清原因。
                     if u.rsplit('/', 1)[-1] in INTENTIONALLY_EMPTY:
                         return u, None, None
-                    return u, 'WARN', 'payload 为空，且不在 INTENTIONALLY_EMPTY 白名单中'
+                    return (u, 'ERROR' if strict_empty else 'WARN',
+                            'payload 为空，且不在 INTENTIONALLY_EMPTY 白名单中。'
+                            '确认是有意留空就登记到白名单，否则从 ini 中摘除该规则集')
                 return u, None, None
             # 拿到了内容但没有 payload:，把实到的东西一并报出来，否则无法判断
             # 是文件真错了，还是 CDN 返回了别的东西
@@ -272,32 +308,41 @@ def check_dist_sync():
 
     它的用途是本地预提交自查：手改过 dist/、或改完 cfg/ 忘了跑构建就想提交时，
     先跑 `validate_ini.py --check-dist` 能立刻发现。"""
+    # 剥离与调试版改写规则只在构建脚本里定义一次，这里直接复用，避免两份实现漂移
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import build_ini as b
+
     DIST = os.path.join(ROOT, 'dist')
     if not os.path.isdir(DIST):
         warn('dist', 'dist/ 目录不存在，尚未构建')
         return
-    for n in sorted(f for f in os.listdir(SRC) if f.endswith('.ini')):
-        dist_path = os.path.join(DIST, n)
-        if not os.path.exists(dist_path):
-            err('dist/' + n, '产物缺失，需要运行 scripts/build_ini.py')
-            continue
-        raw = open(os.path.join(SRC, n), 'rb').read()
-        if raw.startswith(b'\xef\xbb\xbf'):
-            raw = raw[3:]
-        text = raw.decode('utf-8').replace('\r\n', '\n').replace('\r', '\n')
-        expect = [l.rstrip() for l in text.split('\n')]
-        expect = [l for l in expect if l and not l.strip().startswith((';', '#', '//'))]
-        actual = open(dist_path, encoding='utf-8').read().split('\n')
-        actual = [l for l in actual if l]
-        if expect != actual:
-            d = next((i for i, (a, b) in enumerate(zip(expect, actual)) if a != b), min(len(expect), len(actual)))
-            err('dist/' + n, '与 cfg/%s 不同步（第 %d 行起有差异）。'
-                             '不要手改 dist/，运行 scripts/build_ini.py 重新生成' % (n, d + 1))
 
+    def compare(name, expect, src_name):
+        path = os.path.join(DIST, name)
+        if not os.path.exists(path):
+            err('dist/' + name, '产物缺失，需要运行 scripts/build_ini.py')
+            return
+        actual = [l for l in open(path, encoding='utf-8').read().splitlines()
+                  if l and not b.is_comment(l)]
+        if expect != actual:
+            d = next((i for i, (x, y) in enumerate(zip(expect, actual)) if x != y),
+                     min(len(expect), len(actual)))
+            err('dist/' + name, '与 cfg/%s 不同步（第 %d 行起有差异）。'
+                                '不要手改 dist/，运行 scripts/build_ini.py 重新生成' % (src_name, d + 1))
+
+    for n in sorted(f for f in os.listdir(SRC) if f.endswith('.ini')):
+        lines = b.read_normalized(os.path.join(SRC, n))
+        expect = [l for l in lines if l and not b.is_comment(l)]
+        compare(n, expect, n)
+        if b.EMIT_DEBUG and b.SKIP_DEBUG_MARK not in '\n'.join(lines[:10]):
+            compare(n[:-4] + b.DEBUG_SUFFIX + '.ini', b.make_debug(expect)[0], n)
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--online', action='store_true', help='额外拉取所有 provider 校验 payload 结构')
+    ap.add_argument('--strict-empty', action='store_true',
+                    help='配合 --online：不在白名单里的空规则集记为错误。'
+                         'CI 在规则库通知与定时任务触发时开启')
     ap.add_argument('--check-dist', action='store_true',
                     help='检查 dist/ 是否与 cfg/ 同步。本地提交前自查用；'
                          'CI 里不要开，因为构建步骤排在校验之后')
@@ -308,7 +353,7 @@ def main():
         p = os.path.join(SRC, n)
         nr, ng = check(p)
         if a.online:
-            check_online(p)
+            check_online(p, a.strict_empty)
         print('%-32s %3d ruleset / %3d group' % (n, nr, ng))
 
     if a.check_dist:
