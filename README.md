@@ -83,6 +83,8 @@ python3 scripts/build_ini.py               # 生成 dist/
 python3 scripts/validate_ini.py --online   # 拉取所有规则源，校验 provider 结构
 ```
 
+Windows 上如果提示找不到 `python3`，把命令里的 `python3` 换成 `python`；或者在 Python 安装目录里把 `python.exe` 复制一份，命名为 `python3.exe`，之后上面的命令可以原样使用。
+
 `cfg/` 有变化时 GitHub Actions 会自动跑上述流程并提交 `dist/`。
 
 ---
