@@ -159,7 +159,6 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 - **`UK-wifi-call_Domain` 必须在 `Direct_Domain` 之前**，否则 `ls.apple.com` 会截走 Apple 地区检测端点 `gspe1-ssl.ls.apple.com`，英国 Wi-Fi 通话被识别为国内
 - **`AppleAI_Domain` 必须在 `Apple_Domain` / `GEOSITE,apple` 之前**，Apple AI 固定走 `USNet`
 - **`Hulu_Domain` 必须在 `Disney_Domain` / `GEOSITE,disney` 之前**。geosite:disney（v2fly 与 MetaCubeX 均如此）收录了全部 48 条 Hulu 域名（`+.hulu.com`、`+.hulu.jp`、`huluim`、`callhulu` 等），`Disney_Domain` 也有 `hulu.playback.edge.bamgrid.com`；排在后面时 Hulu 组完全空转，Hulu 走 Disney+ 组（默认香港）而 Hulu 只在美国可用。`Hulu_Domain` 里的 `112263.com`、`findyourlimits.com` 等在 geosite:disney 中也是作为 Hulu 条目出现的，前置不会截走 Disney 本身的域名。v2.9 起改正
-- **`[]DOMAIN,notnetflix.cos.cat`（Emby）必须在 `Netflix_Domain` 之前**，否则被 `DOMAIN-KEYWORD,netflix` 先命中。只前置这一条，不整体前移 `Emby_Domain`
 - **⑩ 区 `category-games-!cn` 必须在 `category-entertainment` 之前**。后者收录了游戏分类的绝大部分条目（`category-games` 1123 条中 859 条），排在后面时本地游戏列表未收录的游戏域名（`epicgamescdn.com`、`diablo.com`、`ubistatic*-a.akamaihd.net` 等 353 条）落进 Global TV，Game Platform 切地区 / 直连时不跟着切。v2.9 起改正
 - **⑩ 区用 `category-games-!cn` 而不是 `category-games`**。`category-games` = `category-games-cn` ∪ `category-games-!cn`，cn 部分（`17173.com`、`4399.com`、`37.com` 等）不带 `@cn` 属性，⑤ 区的 `category-games@cn` 截不住，又因⑩早于⑫，会被带进 Game Platform（默认香港）。改用 `-!cn` 后 237 个国内游戏站交给 `China_Domain` / `GEOSITE,cn` 直连。该分类 v2fly 自 2025-06-05 起才有，路由器的 geosite.dat 早于此时整份配置会加载失败
 - **`ChinaMedia_Domain` 必须在 `GlobalMedia_Domain` 之后**，否则 `bilibili` / `qiyi` 关键字会把 B 站、爱奇艺国际版拉进 Domestic TV
@@ -211,12 +210,14 @@ if((!lineSize || strLine[0] == ';' || strLine[0] == '#' ||
 
 **内联规则**（`src/generator/config/ruleconvert.cpp:149`）
 
-`ruleset=分组,[]规则` 中的 `[]` 前缀表示内联规则，原样插入不做校验。可以用它在不改规则库的前提下做定点修正：
+`ruleset=分组,[]规则` 中的 `[]` 前缀表示内联规则，原样插入不做校验。
 
-```ini
-ruleset=Google,[]DOMAIN-SUFFIX,gstatic.com
-ruleset=Cryptocurrency,[]DOMAIN-SUFFIX,crypto.com
-```
+本仓库只用它引用外部数据集和兜底：`[]GEOSITE,…`、`[]GEOIP,…`、`[]FINAL`。
+**不写 `[]DOMAIN` / `[]DOMAIN-SUFFIX` / `[]IP-CIDR` 等内容规则**：规则内容一律放 Openclash-Rule，
+本仓库只决定顺序和引用哪些规则集。内联条目会绕开规则库的构建、校验与冗余分析，
+两边对同一域名的归属迟早对不上。需要定点修正时，在 Openclash-Rule 里改规则内容
+（必要时新建规则集，再回到本仓库引用）。`validate_ini.py` 会把内联内容规则报为 ERROR。
+v2.10 撤除了此前仅有的两条（`crypto.com`、`notnetflix.cos.cat`）。
 
 **空分组处理**（`src/generator/config/subexport.cpp`）
 

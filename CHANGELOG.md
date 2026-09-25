@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-09-25 — v2.10
+
+明确分工：本仓库只决定规则顺序与引用哪些规则集，域名 / IP 等规则内容一律放 Openclash-Rule。
+
+- 撤除全部内联内容规则：`[]DOMAIN-SUFFIX,crypto.com`（Cryptocurrency）与 v2.9 新加的 `[]DOMAIN,notnetflix.cos.cat`（Emby）。撤除后 `crypto.com` 由 `SG_Domain` 命中走 SGNet（与 Cryptocurrency 的默认出口相同，只是不再跟随 Cryptocurrency 组切换），`notnetflix.cos.cat` 回到 Netflix 组；两者的正确归属交由 Openclash-Rule 在规则内容层面解决，需要新规则集时再回到本仓库引用
+- `validate_ini.py` 新增检查：`[]` 内联只允许 `GEOSITE` / `GEOIP` / `FINAL` / `MATCH`，其他类型报 ERROR
+- `cfg` 头部新增【分工】说明；`docs/design-notes.md` 的「内联规则」一节改为禁止写内容规则，删除 v2.9 加的 notnetflix 顺序依赖；`docs/troubleshooting.md` 的 `crypto.com` 期望命中同步为现状
+
+---
+
 ## 2026-09-25 — v2.9
 
 规则覆盖复查（把链上 GEOSITE 按 MetaCubeX 文本版展开做首命中模拟，与 Openclash-Rule 同日的复查一致）。按全部已知域名比对前后首命中，只有下列 646 个域名换组：

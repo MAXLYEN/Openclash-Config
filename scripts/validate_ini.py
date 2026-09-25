@@ -38,6 +38,8 @@ INTERVAL_CONVENTION = {'cf.210723.xyz': 3600}
 # provider 只允许走这个主机名。写死是有意的：直接引用 jsdelivr 会重新引入
 # 不可控的 CDN 缓存层，引用 raw 则会被 OpenClash 改写。
 RULE_HOST = 'cf.210723.xyz'
+# [] 内联允许的类型：外部数据集引用与兜底。具体域名 / IP 条目一律放 Openclash-Rule
+INLINE_ALLOWED = {'GEOSITE', 'GEOIP', 'FINAL', 'MATCH'}
 # --rule-ref 的改写规则：只改 Openclash-Rule 的镜像地址，其他 URL 原样拉取。
 # 改写只发生在 check_online() 拉取时，8b 的 raw.githubusercontent.com 禁用检查
 # 针对的是 ini 里写的 URL，不受影响。
@@ -193,6 +195,16 @@ def check(path):
         err(f, '[]FINAL 兜底应恰好一条，实际 %d 条' % len(finals))
     elif finals[0] != max(i for _, _, i in rulesets):
         err(f, '[]FINAL 不在 ruleset 段最后（第 %d 行）' % finals[0])
+
+    # 6a. 规则内容只放 Openclash-Rule：[] 内联只允许引用外部数据集或兜底，
+    # 不允许 DOMAIN / IP-CIDR 等具体条目。内联条目绕开了规则库的构建、校验与
+    # 冗余分析，时间一长两边对同一域名的归属各说各话。
+    for g, payload, i in rulesets:
+        if payload.startswith('[]'):
+            kind = payload[2:].split(',', 1)[0].strip().upper()
+            if kind not in INLINE_ALLOWED:
+                err(f, '第 %d 行是内联内容规则 %s：规则内容应放 Openclash-Rule，'
+                       '本仓库只引用规则集' % (i, payload))
 
     # 7. url-test 组的正则
     for name, cands in groups.items():
