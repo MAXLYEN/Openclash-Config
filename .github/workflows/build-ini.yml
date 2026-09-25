@@ -60,12 +60,17 @@ jobs:
         env:
           RULE_SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || '' }}
         run: |
-          REF_ARG=""
+          REF_ARG=()
           if [ -n "$RULE_SHA" ]; then
+            # 通知内容来自外部请求，先校验格式再拼进参数与 URL
+            if ! [[ "$RULE_SHA" =~ ^[0-9a-f]{7,40}$ ]]; then
+              echo "::error::rules-updated 通知里的 sha 格式不对：${RULE_SHA:0:80}"
+              exit 1
+            fi
             echo "按 Openclash-Rule 提交 ${RULE_SHA} 校验"
-            REF_ARG="--rule-ref $RULE_SHA"
+            REF_ARG=(--rule-ref "$RULE_SHA")
           fi
-          python3 scripts/validate_ini.py --online --strict-empty $REF_ARG
+          python3 scripts/validate_ini.py --online --strict-empty "${REF_ARG[@]}"
 
       - name: 提交产物
         # /tmp/pushed 标记「本地 HEAD 已在远端」，供后续步骤判断：
@@ -179,3 +184,39 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/MAXLYEN/Openclash-Rule/dispatches \
             -d "{\"event_type\":\"config-updated\",\"client_payload\":{\"sha\":\"${SHA}\"}}"
+
+      - name: 检查 RULE_DISPATCH_TOKEN 有效期
+        # fine-grained PAT 有有效期，过期后「通知 Openclash-Rule」会失败，但那一步
+        # continue-on-error，运行仍是绿的，很容易漏看。定时任务每周检查一次：
+        # token 无效或剩余不足 14 天时让运行变红（GitHub 会发邮件）。
+        # 过期时间取自 API 响应头 github-authentication-token-expiration。
+        # 反方向（Openclash-Rule 发来 rules-updated 用的 token）在对方仓库，需在那边做同样的检查。
+        if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        env:
+          RULE_DISPATCH_TOKEN: ${{ secrets.RULE_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$RULE_DISPATCH_TOKEN" ]; then
+            echo "::warning::未配置 RULE_DISPATCH_TOKEN，Openclash-Rule 收不到 config-updated 通知"
+            exit 0
+          fi
+          HDR=$(mktemp)
+          CODE=$(curl -sS -o /dev/null -D "$HDR" -w '%{http_code}' \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $RULE_DISPATCH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/MAXLYEN/Openclash-Rule)
+          if [ "$CODE" != 200 ]; then
+            echo "::error::RULE_DISPATCH_TOKEN 无效或已过期（HTTP ${CODE}），请重新生成并更新 Secret"
+            exit 1
+          fi
+          EXP=$(grep -i '^github-authentication-token-expiration:' "$HDR" | cut -d' ' -f2- | tr -d '\r')
+          if [ -z "$EXP" ]; then
+            echo "token 有效，未设置过期时间"
+            exit 0
+          fi
+          DAYS=$(( ( $(date -d "$EXP" +%s) - $(date +%s) ) / 86400 ))
+          echo "token 有效，${EXP} 过期（剩 ${DAYS} 天）"
+          if [ "$DAYS" -lt 14 ]; then
+            echo "::error::RULE_DISPATCH_TOKEN 将于 ${EXP} 过期（剩 ${DAYS} 天），请提前续期"
+            exit 1
+          fi
