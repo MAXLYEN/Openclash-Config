@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-09-25 — v2.9
+
+规则覆盖复查（把链上 GEOSITE 按 MetaCubeX 文本版展开做首命中模拟，与 Openclash-Rule 同日的复查一致）。按全部已知域名比对前后首命中，只有下列 646 个域名换组：
+
+- ⚠ ⑩ 区改用 `GEOSITE,category-games-!cn`：该分类 v2fly 自 2025-06-05 起才有（Loyalsoldier / MetaCubeX 当前的 geosite.dat 均已包含），路由器的 geosite.dat 早于此时整份配置会加载失败，更新订阅前先更新 GeoSite 数据库
+- `category-games` 改为 `category-games-!cn`：原分类里的国内游戏站（`17173.com`、`4399.com`、`37.com`、`3304399.net` 等）没有 `@cn` 属性，⑤ 区的 `category-games@cn` 截不住，此前走 Game Platform（默认香港）。现在 237 个改走直连（193 个由 `GEOSITE,cn`、44 个由 `China_Domain` 命中），另有 5 个不在国内列表里的落到 FINAL、1 个（`bx.in.th`）落到 `GEOSITE,gfw`
+- `Hulu_Domain` 前移到 `Disney_Domain` / `GEOSITE,disney` 之前：geosite:disney 收录了全部 Hulu 域名，`Disney_Domain` 也有 `hulu.playback.edge.bamgrid.com`，此前 Hulu 组完全空转，`hulu.com` 等 49 个域名走 Disney+ 组（默认香港），而 Hulu 只在美国可用。Disney 本身的域名去向不变
+- ⑩ 泛分类区游戏分类（现为 `category-games-!cn`）移到 `category-entertainment` 之前：后者收录了 `category-games` 1123 条中的 859 条，此前本地游戏列表未收录的 353 个游戏域名（`epicgamescdn.com`、`diablo.com`、`ubistatic*-a.akamaihd.net`、`leagueoflegends.com` 等）落进 Global TV。两组默认都是 `Proxy`，默认设置下出口不变，但 Game Platform 切地区 / 直连时这些域名现在会跟着切
+- Emby 服 `notnetflix.cos.cat` 新增内联规则，排在 `Netflix_Domain` 之前：此前被 `DOMAIN-KEYWORD,netflix` 先命中进 Netflix 组。不整体前移 `Emby_Domain`
+- `docs/design-notes.md` 第三节补充上述三条硬性顺序依赖，⑩ 行按实际顺序改写
+
+---
+
 ## 2026-09-24 — CI：固定运行环境（未升版本号，配置内容不变）
 
 - `build-ini.yml` 的 `runs-on` 由 `ubuntu-latest` 固定为 `ubuntu-24.04`：`ubuntu-latest` 自 2026-10-19 起迁移到 Ubuntu 26，避免运行环境在没有改动的情况下变化（与 Openclash-Rule `46b5b50` 一致）
