@@ -96,9 +96,10 @@ OpenClash 的「Github 加速地址」会改写 provider 的 url
 | 方向 | 事件 | 发送时机 | 对方做什么 |
 |---|---|---|---|
 | Rule → Config | `rules-updated` | Rule 构建推送产物后 | 本仓库跑联网校验（`--online --strict-empty --rule-ref <sha>`） |
-| Config → Rule | `config-updated` | 本仓库推送的产物里 `dist/Custom_Clash_V2.ini` 有变化 | Rule 的 `dedupe.yml` 按新规则链做冗余分析，只出报告 |
+| Config → Rule | `config-updated` | 本次构建前后远端 main 上的 `dist/Custom_Clash_V2.ini` 有变化（不论来自 bot 提交还是用户推送） | Rule 的 `dedupe.yml` 按新规则链做冗余分析，只出报告 |
 
-两个方向的 `client_payload.sha` 都是**含产物的那次 bot 提交**，对方据此从
+两个方向的 `client_payload.sha` 都是**构建结束时远端 main 上含该产物的提交**（通常是 bot 提交；
+本仓库用户推送已自带 `dist/` 且 bot 无可提交时，就是用户那次提交），对方据此从
 `raw.githubusercontent.com/<仓库>/<sha>/...` 读取，而不是读镜像或分支：
 
 - 镜像约 5 分钟才从上游同步一次，通知却在推送后约 10 秒就到。读镜像拿到的是旧文件，

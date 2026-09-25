@@ -67,31 +67,32 @@ jobs:
           python3 scripts/validate_ini.py --online --strict-empty $REF_ARG
 
       - name: 提交产物
+        # /tmp/pushed 标记「本地 HEAD 已在远端」，供下一步通知判断：
+        # 无变化时 HEAD 就是 GITHUB_SHA，本来就在远端；推送成功后同理。
+        # 推送失败时不写 —— 本地 HEAD 不在远端，Rule 按提交号读 raw 会 404。
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add cfg dist
           if git diff --cached --quiet; then
             echo "无变化，跳过提交"
+            echo ok > /tmp/pushed
             exit 0
           fi
           COUNT=$(git diff --cached --name-only | wc -l)
           CHANGED_INI=$(git diff --cached --name-only -- 'dist/*.ini')
           git commit -m "chore: 重新生成配置产物（${COUNT} 个文件）" -m "来源提交 ${GITHUB_SHA::7}"
           # 构建期间 main 可能被推进（例如只改 docs/ 的推送，它不触发本 workflow，
-          # 不受 concurrency 保护），直接 push 会被拒。先 rebase 再重试。
+          # 不受 concurrency 保护），直接 push 会被拒。先 rebase 再重试；
+          # rebase 冲突时中止并放弃重试，不留下半截 rebase 状态。
           PUSHED=0
           for i in 1 2 3; do
             if git push; then PUSHED=1; break; fi
             echo "推送被拒，rebase 后重试（第 ${i} 次）"
-            git pull --rebase origin main
+            git pull --rebase origin main || { git rebase --abort; break; }
           done
           [ "$PUSHED" = 1 ] || exit 1
-          # 规则链有变化时记下推送后的 HEAD，供下一步通知 Openclash-Rule。
-          # 必须取推送成功后的 HEAD：中途 rebase 过的话，原提交号在远端并不存在
-          if echo "$CHANGED_INI" | grep -qx 'dist/Custom_Clash_V2.ini'; then
-            git rev-parse HEAD > /tmp/config_sha
-          fi
+          echo ok > /tmp/pushed
           # 清除 jsdelivr 缓存，让 README 里的 fastly 镜像地址立即拿到新配置。
           # 只清 fastly 这一层；testingcf 前面的 Cloudflare 缓存清不到（见 docs/design-notes.md）。
           # 清缓存失败不影响发布，只影响镜像地址的新鲜度。
@@ -108,6 +109,16 @@ jobs:
         # 对方读取 client_payload.sha 对应提交的 dist/Custom_Clash_V2.ini，只出报告不提交；
         # 对方的 build 只在 rules/list 或 scripts 变化时触发，因此不会形成循环。
         #
+        # 判断依据是「本次运行前后，远端 main 上的 dist/Custom_Clash_V2.ini 是否变化」，
+        # 而不是 bot 自己的提交里有没有它：改规则顺序时，会话通常在本地跑过 build_ini.py，
+        # 把 cfg/ 与 dist/ 一起推上来，bot 随后只改 dist/manifest.json（或无可提交）。
+        # 例如 9fa077f（后移 ChinaMedia_Domain）、18782dd（前移 UK-wifi-call_Domain）
+        # 都自带 dist/Custom_Clash_V2.ini，其后的 bot 提交 28fb5e0 / c0a4f1d 只改了 manifest。
+        # 基准 BASE：push 用推送前的远端 tip（event.before）；
+        # 其他触发（repository_dispatch / schedule / workflow_dispatch）用 GITHUB_SHA，
+        # 此时只有 bot 提交可能改变 dist。
+        # 发送的是 HEAD：已由上一步的 /tmp/pushed 确认在远端（中途 rebase 过也是推送后的提交号）。
+        #
         # 需要在本仓库 Settings → Secrets and variables → Actions 添加 RULE_DISPATCH_TOKEN：
         # 一个 fine-grained PAT，仓库范围选 MAXLYEN/Openclash-Rule，
         # 权限 Contents: Read and write。GITHUB_TOKEN 无法跨仓库触发 workflow。
@@ -115,16 +126,42 @@ jobs:
         continue-on-error: true
         env:
           RULE_DISPATCH_TOKEN: ${{ secrets.RULE_DISPATCH_TOKEN }}
+          EVENT_BEFORE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: |
-          if [ ! -s /tmp/config_sha ]; then
-            echo "dist/Custom_Clash_V2.ini 未变化或未推送，无需通知"
+          if [ ! -f /tmp/pushed ]; then
+            echo "本地 HEAD 未推送到远端，无需通知"
+            exit 0
+          fi
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            BASE="$EVENT_BEFORE"
+          else
+            BASE="$GITHUB_SHA"
+          fi
+          CHANGED=0
+          if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ]; then
+            echo "无推送前基准（新分支），视为有变化"
+            CHANGED=1
+          else
+            # checkout 是浅克隆，event.before 通常不在本地；diff 只需两端的树，单独取回即可。
+            # 取不到（例如被强推覆盖后已不可达）同样视为有变化
+            git cat-file -e "$BASE^{commit}" 2>/dev/null \
+              || git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
+            if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+              echo "基准 ${BASE} 不可用，视为有变化"
+              CHANGED=1
+            elif ! git diff --quiet "$BASE" HEAD -- dist/Custom_Clash_V2.ini; then
+              CHANGED=1
+            fi
+          fi
+          if [ "$CHANGED" != 1 ]; then
+            echo "dist/Custom_Clash_V2.ini 相对 ${BASE::7} 未变化，无需通知"
             exit 0
           fi
           if [ -z "$RULE_DISPATCH_TOKEN" ]; then
             echo "未配置 RULE_DISPATCH_TOKEN，跳过通知"
             exit 0
           fi
-          SHA=$(cat /tmp/config_sha)
+          SHA=$(git rev-parse HEAD)
           echo "通知提交 ${SHA}"
           curl -sS -f -X POST \
             -H "Accept: application/vnd.github+json" \

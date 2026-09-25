@@ -10,6 +10,7 @@
 
 - `validate_ini.py` 新增 `--rule-ref <提交号>`：Openclash-Rule 的规则源改为按该提交从 raw 读取，报错注明「按 Rule 提交 xxxxxxx 校验」。收到 `rules-updated` 通知时传入通知里的提交号 —— 镜像约 5 分钟才同步，此前读镜像会漏过规则库刚删除或改名的文件
 - 构建推送后若 `dist/Custom_Clash_V2.ini` 有变化，向 Openclash-Rule 发送 `config-updated`（携带推送后的 HEAD），触发对方的冗余分析。需配置 `RULE_DISPATCH_TOKEN`，未配置时跳过（见 [docs/操作流程.md](docs/操作流程.md) 第 7 节）
+- 修正 `config-updated` 的触发条件：改为比较本次运行前后远端 main 上的 `dist/Custom_Clash_V2.ini`（push 以推送前的 tip 为基准，其他触发以 `GITHUB_SHA` 为基准），不再只看 bot 自己的提交。此前改规则顺序的推送（如 `9fa077f`、`18782dd`）自带 `dist/`，bot 只改 `manifest.json`，导致不会通知；bot 推送失败时不发送。推送重试中 rebase 冲突时改为中止并放弃
 
 ---
 
