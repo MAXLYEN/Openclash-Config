@@ -18,6 +18,7 @@
 
 - `cfg/Custom_Clash.ini` 注释掉已在规则库删除的 `BritboxUK_Domain` 引用（消除 404；其域名已由紧邻的 `UKMedia_Domain` 以同一 `UKNet` 分组覆盖，路由不变）
 - 修正 `PH_Domain` 行首的 `:` 笔误为 `;` 注释（该行原本就不生效）
+- 注释掉在规则库已为空的 `Steam_CDN_Domain`、`Supercell_Domain`、`Nintendo_IP` 引用（消除联网校验的空规则集告警；三者本就是 0 条规则，路由不变。V2 已于 2026-09-05/06 摘除）
 
 ---
 
