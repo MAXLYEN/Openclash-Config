@@ -174,6 +174,8 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 
 一律作为**兜底补漏**，排在同组 `.list` 之后，由本地 list 主导匹配。
 
+Meta 使用 `US_Domain` → `GEOSITE,meta` → 通用通信/社交分类的顺序；未列入一方规则集但被 GeoSite 收录的 Meta 域名走 `USNet`。IP 侧的 `GEOIP,facebook` 同样走 `USNet`，主要覆盖无域名元数据的连接。GeoSite 分类数据需要随路由器数据库更新。
+
 保持前置的三类例外：
 
 1. `private` 内网

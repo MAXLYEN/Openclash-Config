@@ -79,7 +79,7 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | Talkatone / Paypal | `USNet` | 仅美 / 英 / 欧候选 |
 | Cryptocurrency / Google / Google FCM | `SGNet` | 新加坡是亚洲金融分流中心 |
 | Bahamut | `Proxy` | 台湾站，港节点最近 |
-| Telegram / Social Media | `Proxy` | 延迟优先 |
+| Telegram / Social Media | `Proxy` | 延迟优先；Meta 域名与 IP 由更早的 USNet 规则处理 |
 | GitHub / Microsoft / Apple / Speedtest | `Proxy` | 延迟优先 |
 | Game Platform / Steam | `Proxy` | 第二候选 `Global Direct` |
 | UnpopularNet / Others | `Proxy` | `Others` 即 `[]FINAL` 兜底 |

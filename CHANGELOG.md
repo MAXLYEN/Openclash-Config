@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-09-26 — v2.12
+
+- Meta 的 `GEOIP,facebook` 改为 `USNet`，使无域名元数据的 Meta IP 连接使用美国出口
+- 在通用通信与社交 GeoSite 前增加 `GEOSITE,meta` → `USNet`，补齐 `US_Domain` 未列出的一方域名；已列出的域名仍优先由 Rule provider 命中
+- OpenAI、Claude、Gemini、GitHub 与各地区 provider 的引用和顺序保持现有配置；新增编程模型域名由 Openclash-Rule 对应列表提供
+
+---
+
 ## 2026-09-25 — v2.11
 
 引用 Openclash-Rule `7e62bd7` 新增的两个规则集，把 v2.10 撤除内联规则后遗留的归属问题在规则内容层面补回：
