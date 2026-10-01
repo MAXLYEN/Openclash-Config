@@ -49,13 +49,12 @@ RULE_RAW_PREFIX = 'https://raw.githubusercontent.com/MAXLYEN/Openclash-Rule/%s/'
 # 刻意留空的规则集：--online 检查到 payload: [] 时不告警。
 #   SelfHosted_Domain —— 自建域名写在路由器本地的 openclash_custom_overwrite.sh，
 #                        本文件只为 Self-Hosted 策略组提供挂载点
-#   Custom-Made_Domain —— 效果同上
-#                        本文件为 Custom-Made 策略组提供挂载点
+#   （Custom-Made_Domain 曾同样登记，2026-10-01 起收录 EA 下载 CDN，已不为空，移出白名单）
 #   AppleAI_IP / IPCheck_IP —— 目前没有可单独归属的稳定 IP 段，保留成对占位
 #   OpenAI_IP / Copilot_IP —— 两个 IP 与 OpenAI/Copilot 共用、无法归属，ASN 范围
 #                        过宽，已全部停用，保留成对占位
 INTENTIONALLY_EMPTY = {
-    'SelfHosted_Domain.yaml', 'Custom-Made_Domain.yaml',
+    'SelfHosted_Domain.yaml',
     'AppleAI_IP.yaml', 'IPCheck_IP.yaml',
     'OpenAI_IP.yaml', 'Copilot_IP.yaml',
 }

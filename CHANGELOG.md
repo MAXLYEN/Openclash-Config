@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-10-01 — 校验白名单调整（未升版本号，配置内容不变）
+
+- Openclash-Rule `642b4f1` 在 `Custom-Made_Domain` 收录 EA app 下载 CDN `origin-a.akamaihd.net`。此前该域名命中 ⑤ 区 `GEOSITE,category-game-platforms-download` 走直连，实测只有 20–70 KB/s；现在由 ③ 区的 Custom-Made 组接管，默认仍直连，下载慢时在面板切到 Proxy
+- 该规则集不再为空，从 `validate_ini.py` 的 `INTENTIONALLY_EMPTY` 移出，此后若被清空会在 `--strict-empty` 下报错
+- `docs/architecture.md` 拆分 Self-Hosted / Custom-Made 两行，补充 Custom-Made 的「直连太慢时切代理」用途
+
+---
+
 ## 2026-09-26 — v2.12
 
 - Meta 的 `GEOIP,facebook` 改为 `USNet`，使无域名元数据的 Meta IP 连接使用美国出口

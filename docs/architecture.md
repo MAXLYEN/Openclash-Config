@@ -85,7 +85,8 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | UnpopularNet / Others | `Proxy` | `Others` 即 `[]FINAL` 兜底 |
 | PT | `Global Direct` | PT 必须走本地出口 |
 | Netease / Xiaomi / Domestic TV | `Global Direct` | 国区服务 |
-| Self-Hosted / Custom-Made | `Global Direct` | 默认直连，被墙时面板切代理 |
+| Self-Hosted | `Global Direct` | 默认直连，被墙时面板切代理 |
+| Custom-Made | `Global Direct` | 默认直连；被墙或直连太慢时面板切代理（如 EA 下载 CDN `origin-a.akamaihd.net`） |
 
 ---
 
