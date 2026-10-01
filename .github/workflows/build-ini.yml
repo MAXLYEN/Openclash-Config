@@ -135,7 +135,7 @@ jobs:
             echo "相对 ${BASE::7} 有变化：${INI:-无}"
           else
             # 无基准（新分支）或取不到（被强推覆盖后已不可达）：视为全部变化
-            INI=$(ls dist/*.ini | tr '\n' ' ')
+            INI=$(printf '%s ' dist/*.ini)
             echo "基准 ${BASE:-（无）} 不可用，视为全部变化：${INI}"
           fi
           echo "ini=${INI% }" >> "$GITHUB_OUTPUT"
