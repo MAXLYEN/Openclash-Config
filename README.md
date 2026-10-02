@@ -66,7 +66,7 @@ Layer 2  平台组（select）      Netflix / ChatGPT / Cryptocurrency / Steam /
 | `Proxy` | 香港，通用与低延迟场景 |
 | `USNet` | 美国，AI 与美区专属服务（Hulu / PrimeVideo / Spotify 等） |
 | `SGNet` | 新加坡，亚洲金融与虚拟币 |
-| `JPNet` | 日本，含无专用节点地区的挂靠（如菲律宾） |
+| `JPNet` | 日本，Netflix（含 fast.com）的默认出口与日本 Hulu；含无专用节点地区的挂靠（如菲律宾） |
 | `UKNet` | 英国，仅本地服务 |
 | `EUNet` | 欧洲 |
 | `AUNet` / `BRNet` | 大洋洲 / 南美 |

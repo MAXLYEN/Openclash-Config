@@ -38,10 +38,10 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 
 | 锚点 | 节点池 | 承载内容 |
 |---|---|---|
-| `Proxy` | 🇭🇰 HK | 香港，通用与低延迟场景；主流流媒体（Netflix / Disney+ / HBO）、社交、开发、游戏平台的默认出口 |
+| `Proxy` | 🇭🇰 HK | 香港，通用与低延迟场景；主流流媒体（Disney+ / HBO）、社交、开发、游戏平台的默认出口 |
 | `USNet` | 🇺🇸 US | 美国，AI 与美区专属服务（Hulu / PrimeVideo / Spotify / TikTok / X / 购物）；美国本土金融与 VoIP |
 | `SGNet` | 🇸🇬 SG | 新加坡，亚洲金融分流中心，亚洲虚拟币业务平台基本都走这里 |
-| `JPNet` | 🇯🇵 JP | 日本本地服务，以及 YouTube / Emby / 即时通讯的默认出口；**没有专用节点的地区统一挂靠这里**（如菲律宾，内容已并入 `JP_Domain`） |
+| `JPNet` | 🇯🇵 JP | 日本本地服务与日本 Hulu，以及 Netflix（含 `fast.com`）/ YouTube / Emby / 即时通讯的默认出口；**没有专用节点的地区统一挂靠这里**（如菲律宾，内容已并入 `JP_Domain`） |
 | `UKNet` | 🇬🇧 UK | 英国，**只放本地服务**（银行、Britbox、UK 媒体），不承担通用代理 |
 | `EUNet` | 🇩🇪 DE | 欧洲 |
 | `AUNet` | 🇦🇺 AU | 大洋洲 |
@@ -70,7 +70,8 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 
 | 平台组 | 第一候选 | 依据 |
 |---|---|---|
-| Netflix / Disney+ / HBO / Apple TV+ / Global TV | `Proxy` | 港区内容库，低延迟 |
+| Disney+ / HBO / Apple TV+ / Global TV | `Proxy` | 港区内容库，低延迟 |
+| Netflix | `JPNet` | 默认日本；域名、IP 与 GEOSITE / GEOIP 兜底均归 Netflix 组，保留其他地区候选 |
 | Hulu / PrimeVideo / Spotify | `USNet` | 美区专属服务 |
 | Emby | `JPNet` | Emby 服务器在日本 |
 | YouTube / Instant Messaging | `JPNet` | 日本节点 |
@@ -87,6 +88,8 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | Netease / Xiaomi / Domestic TV | `Global Direct` | 国区服务 |
 | Self-Hosted | `Global Direct` | 默认直连，被墙时面板切代理 |
 | Custom-Made | `Global Direct` | 默认直连；被墙或直连太慢时面板切代理（如 EA 下载 CDN `origin-a.akamaihd.net`） |
+
+`fast.com` 由前置的 Netflix 域名规则命中，跟随 Netflix 组选择，默认 `JPNet`。日本 Hulu 的 `HuluJP_Domain` 直接归 `JPNet`；美国 Hulu 走 Hulu 平台组，默认 `USNet`。第一候选只决定无选择记录时的默认值；已有 Netflix 选择记录的用户需在面板切到 `JPNet`。
 
 ---
 

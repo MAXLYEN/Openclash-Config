@@ -133,10 +133,13 @@ OpenClash 日志搜 `RuleSet(`，逐条核对：
 | `store.steampowered.com` | `RuleSet(Steam_Domain)` | Steam |
 | `gspe1-ssl.ls.apple.com` | `RuleSet(UK-wifi-call_Domain)` | UKNet（落到 `Direct_Domain` 说明它没排在前面） |
 | `apple-relay.apple.com` | `RuleSet(AppleAI_Domain)` | USNet（落到 `Apple_Domain` 说明顺序反了） |
+| `www.netflix.com` / `www.nflxvideo.net` | `RuleSet(Netflix_Domain)` | Netflix（默认 JPNet） |
+| `fast.com` | `RuleSet(Netflix_Domain)` | Netflix（默认 JPNet；落到 Speedtest 说明顺序反了） |
 | `www.hulu.jp` | `RuleSet(HuluJP_Domain)` | JPNet（落到 `GeoSite(disney)` 说明顺序反了） |
+| `www.hulu.com` / `hulu.playback.edge.bamgrid.com` | `RuleSet(Hulu_Domain)` | Hulu（默认 USNet） |
 | `www.bilibili.tv` | `RuleSet(GlobalMedia_Domain)` | Global TV（落到 `ChinaMedia_Domain` 说明顺序反了） |
 
-面板确认：换一个配置文件名强制丢弃 history 后，`Proxy` 显示香港节点、`USNet` 显示美国节点、`Cryptocurrency` 显示新加坡节点、`UKNet` 显示英国节点。
+面板确认：换一个配置文件名强制丢弃 history 后，`Proxy` 显示香港节点、`USNet` 显示美国节点、`JPNet` 显示日本节点、`Cryptocurrency` 显示新加坡节点、`UKNet` 显示英国节点；Netflix 组默认选择 `JPNet`，Hulu 组默认选择 `USNet`。已有选择记录时，更新订阅不会覆盖原选择，需手动将 Netflix 切到 `JPNet`。无域名元数据的 Netflix IP 连接应命中 `RuleSet(Netflix_IP)` 或 `GeoIP(netflix)`，进入 Netflix 组。
 
 ---
 

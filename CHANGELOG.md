@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-10-01 — v2.13
+
+- 保留 Netflix 平台选择组，将第一候选改为 `JPNet`（日本），其余地区候选保留；`Netflix_Domain`、`GEOSITE,netflix`、`Netflix_IP`、`GEOIP,netflix` 继续统一归 Netflix 组
+- `Netflix_Domain` 与 `GEOSITE,netflix` 前移到 `Speedtest_Domain` / `GEOSITE,category-speedtest` 之前，使双方都覆盖的 `fast.com` 首先命中 Netflix 规则，默认走 `JPNet`；其他测速域名仍由 Speedtest 组处理
+- 日本 Hulu 的 `HuluJP_Domain` 继续归 `JPNet`；美国 Hulu 的 `Hulu_Domain` 继续归 Hulu 组，第一候选仍为 `USNet`
+- 架构、设计约定与排查清单同步；规则内容未改，更新订阅后才会应用新的规则顺序。已有 Netflix 选择记录会保留，需在面板切到 `JPNet` 才会使用日本出口
+
+---
+
 ## 2026-10-01 — 校验白名单调整（未升版本号，配置内容不变）
 
 - Openclash-Rule `642b4f1` 在 `Custom-Made_Domain` 收录 EA app 下载 CDN `origin-a.akamaihd.net`。此前该域名命中 ⑤ 区 `GEOSITE,category-game-platforms-download` 走直连，实测只有 20–70 KB/s；现在由 ③ 区的 Custom-Made 组接管，默认仍直连，下载慢时在面板切到 Proxy

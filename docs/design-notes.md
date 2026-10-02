@@ -125,6 +125,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 - 文件名与分组名对应则用**专属分组**（`Netflix_Domain` → `Netflix`）
 - 仅共用地区节点则归**地区锚点组**（`AU_Domain` → `AUNet`）
 - 没有专用节点的地区挂靠到最近的锚点（菲律宾 → `JPNet`，内容并入 `JP_Domain`）
+- Netflix 的域名、IP provider 与 GEOSITE / GEOIP 兜底均归 Netflix 组，默认 `JPNet`，保留手动切换地区能力。日本 Hulu 直接归 `JPNet`，美国 Hulu 保留 Hulu 组（默认 `USNet`）
 
 ---
 
@@ -158,6 +159,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 - **`PT_Domain` 必须在 `Direct_Domain` 之前**，否则 100 条被吃掉
 - **`UK-wifi-call_Domain` 必须在 `Direct_Domain` 之前**，否则 `ls.apple.com` 会截走 Apple 地区检测端点 `gspe1-ssl.ls.apple.com`，英国 Wi-Fi 通话被识别为国内
 - **`AppleAI_Domain` 必须在 `Apple_Domain` / `GEOSITE,apple` 之前**，Apple AI 固定走 `USNet`
+- **`Netflix_Domain` / `GEOSITE,netflix` 必须在 `Speedtest_Domain` / `GEOSITE,category-speedtest` 之前**。双方都覆盖 `fast.com`，Netflix 规则先命中才能使该测速站与 Netflix 的其余流量一起跟随 Netflix 组，默认 `JPNet`。v2.13 起
 - **`CryptoCom_Domain` 在 `OKX_Domain` 之前**，与 Cryptocurrency 组其余规则集同在 ⑧ 金融区。`crypto.com` 单独成集，不混进 OKX / Binance 规则集；未收录的币圈域名仍由 ⑩ 区 `GEOSITE,category-cryptocurrency` 兜底。v2.11 起
 - **`Hulu_Domain` 必须在 `Disney_Domain` / `GEOSITE,disney` 之前**。geosite:disney（v2fly 与 MetaCubeX 均如此）收录了全部 48 条 Hulu 域名（`+.hulu.com`、`+.hulu.jp`、`huluim`、`callhulu` 等），`Disney_Domain` 也有 `hulu.playback.edge.bamgrid.com`；排在后面时 Hulu 组完全空转，Hulu 走 Disney+ 组（默认香港）而 Hulu 只在美国可用。`Hulu_Domain` 里的 `112263.com`、`findyourlimits.com` 等在 geosite:disney 中也是作为 Hulu 条目出现的，前置不会截走 Disney 本身的域名。v2.9 起改正
 - **`HuluJP_Domain` 必须在 `Hulu_Domain` 与 `GEOSITE,disney` 之前**。日本 Hulu（`hulu.jp`、`happyon.jp`、`hjholdings.jp`、`streaks.jp` 等）需要日本 IP，归锚点组 `JPNet`（仅共用地区节点，先例 `AppleAI_Domain` → `USNet`）。geosite:disney 含 `+.hulu.jp`，排在它后面永远命中不到；`hulu.jp` 以外的 5 个域名此前落进 `GlobalMedia_Domain`（Global TV）。v2.11 起
