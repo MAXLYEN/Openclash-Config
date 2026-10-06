@@ -137,6 +137,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 ①  内网               private
 ②  自建               Self-Hosted
 ③  强制代理/直连      Custom_Proxy → Custom-Made → Custom_Direct
+    出口覆盖          （Residential，未启用）→ USAlt
 ④  拦截               Reject / HDOBOXAds / TalkatoneAds
 ⑤  精确直连           Lan → GoogleCN → SteamCN
                       → games@cn → game-platforms-download
@@ -154,6 +155,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 
 硬性顺序依赖（改动前务必确认）：
 
+- **出口覆盖名单（`USAlt_Domain`，以及启用后的 `Residential_Domain`）必须在所有平台专属与地区文件之前**。它们按「出口要求」归类，例如 `meta.ai` 同时出现在 `US_Domain` 里，`USAlt_Domain` 必须先命中才能把 Meta AI 送到备用美国出口。设计见 [architecture.md](architecture.md) 第六节
 - **地区文件必须在平台专属之后**。放前面会吃掉平台组 —— `US_Domain` 的 AI 关键词曾让 ChatGPT / Copilot / TikTok 三个组完全空转
 - **`Copilot_Domain` 必须在 `OpenAI_Domain` 之后**。`Copilot_Domain` 有 26 条是 `OpenAI_Domain` 的原样复制（含 `openai.com`、`chatgpt.com`），前置会让 ChatGPT 组空转；`OpenAI_Domain` 不含 bing / msn / copilot 条目，后置不影响 Copilot 命中。v2.0 曾反过来排，v2.1 起改正
 - **`PT_Domain` 必须在 `Direct_Domain` 之前**，否则 100 条被吃掉

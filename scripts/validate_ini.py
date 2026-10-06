@@ -53,10 +53,12 @@ RULE_RAW_PREFIX = 'https://raw.githubusercontent.com/MAXLYEN/Openclash-Rule/%s/'
 #   AppleAI_IP / IPCheck_IP —— 目前没有可单独归属的稳定 IP 段，保留成对占位
 #   OpenAI_IP / Copilot_IP —— 两个 IP 与 OpenAI/Copilot 共用、无法归属，ASN 范围
 #                        过宽，已全部停用，保留成对占位
+#   USAlt_IP —— 美国备用出口目前只按域名分流（Meta AI），暂无需要单独归属的 IP 段，成对占位
 INTENTIONALLY_EMPTY = {
     'SelfHosted_Domain.yaml',
     'AppleAI_IP.yaml', 'IPCheck_IP.yaml',
     'OpenAI_IP.yaml', 'Copilot_IP.yaml',
+    'USAlt_IP.yaml',
 }
 
 errors, warns = [], []

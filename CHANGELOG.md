@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-10-06 — v2.14
+
+新增「美国备用出口」USAlt，Meta AI（Muse）改走能正常使用的美国节点；家宽方案写入配置但保持注释。
+
+- 起因：常用美国节点（AS2914 NTT 段）被 Meta 降级。同一个 Key 调 `api.meta.ai/v1/models` 只返回 `muse-image-1.0` 一个模型，`dev.meta.ai` 登录后跳 `/unavailable?reason=geo`；RackNerd 节点（AS36352）返回全部 8 个模型，浏览器验证可正常使用。两者 ipinfo 都是美国洛杉矶，问题在 IP 类型 / 信誉而不是地区，因此不需要家宽
+- 新增 Layer 0 节点池 `🇺🇸 US Alt`（`fallback`：正则 `RackNerd` 优先，不可用时退回 `🇺🇸 US Node`，永不为空）与 Layer 1 锚点 `USAlt`（写法同其他锚点）。日常美国流量仍走 `USNet`
+- ③ 区末尾新增「出口覆盖」段，引用 Openclash-Rule 新增的 `USAlt_Domain`（`meta.ai` 整个域名、`auth.meta.com`、`accountscenter.meta.com`），早于所有平台规则与 `US_Domain`；IP 区引用 `USAlt_IP`（空占位，登记进 `INTENTIONALLY_EMPTY`）
+- 家宽方案（`Residential` 组、8 个 `🏠 XX Home` 家宽池、③ 区与 IP 区的 `Residential` 规则）完整写入 cfg，整段注释，附设计要点与启用步骤；`dist/` 不受影响
+- `docs/architecture.md` 新增第六节「出口覆盖」，`design-notes.md` 规则顺序与硬性依赖同步更新
+
+---
+
 ## 2026-10-01 — v2.13
 
 - 保留 Netflix 平台选择组，将第一候选改为 `JPNet`（日本），其余地区候选保留；`Netflix_Domain`、`GEOSITE,netflix`、`Netflix_IP`、`GEOIP,netflix` 继续统一归 Netflix 组
