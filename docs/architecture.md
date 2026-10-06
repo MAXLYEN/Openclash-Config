@@ -124,7 +124,7 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | 规则 | Openclash-Rule 的 `USAlt_Domain`（首批：`DOMAIN-SUFFIX,meta.ai`、`DOMAIN,auth.meta.com`、`DOMAIN,accountscenter.meta.com`）与 `USAlt_IP`（空占位） |
 | 日常流量 | 不受影响，美国流量仍走 `USNet` |
 
-以后其他平台遇到同样问题（常用美国节点被降级），把它的域名加进 `USAlt_Domain` 即可，Config 不用改。登录会跳到 `www.facebook.com`，它仍走 `USNet`；若上线后登录又出现跳转循环，再把 `DOMAIN,www.facebook.com` 补进 `USAlt_Domain`。
+以后其他平台遇到同样问题（常用美国节点被降级），把它的域名加进 `USAlt_Domain` 即可，Config 不用改。登录会跳到 `www.facebook.com`，它仍走 `USNet`（常用节点）。2026-10-06 实测：USNet 切回常用节点、只有 Meta AI 走 RackNerd 时，`dev.meta.ai` 可正常登录，因此 `www.facebook.com` 不需要放进 `USAlt_Domain`。
 
 ### 家宽专用（Residential，未启用）
 
