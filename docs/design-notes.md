@@ -130,7 +130,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
    - c. 没有专用节点的地区 → 挂靠最近锚点（菲律宾 → `JPNet`，内容并入 `JP_Domain`）
 2. **拆分**：一个组里混着「地区需求不同」的服务时拆开（`HKNet` 从 `Proxy` 拆出、`Shopee` 从 `Shopping Platform` 拆出）
 3. **合并**：候选列表相同不是合并理由；只有切地区对这些服务都没有意义时才合并，并且由用户逐个拍板（已拍板：网易云 / 小米 / 国内视频 → `Domestic`，Google FCM → `Google`，Telegram → `Social Media`）
-4. **不动**：用户自定义的组不拆、不并、不改候选 —— `Self-Hosted`、`Custom-Made`、`UnpopularNet`（给以后的冷门地区节点预留）、`USAlt`、`Bybit Global`
+4. **不动**：用户自定义的组不拆、不并、不改候选 —— `Self-Hosted`、`Custom-Made`、`UnpopularNet`（给以后的冷门地区节点预留）、`USAlt`、`Bybit Global`、`PT`
 5. **记录**：以本节为准；每次拆 / 并在 cfg 对应行写原因、记 CHANGELOG，并同步 `architecture.md` 第四节
 
 补充说明（不属于规则本身）：
@@ -138,6 +138,11 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 - `Proxy` 是通用代理（GFW 兜底、强制代理、FINAL 默认），`HKNet` 只承载香港本地（`HK_Domain` / `HK_IP` / `HK-wifi-call`）；两者第一候选都是 🇭🇰 HK Node。平台组里的「香港」候选写 `Proxy`
 - 平台组的 provider 与对应 GEOSITE / GEOIP 兜底归同一组（如 Netflix 的域名、IP、`GEOSITE,netflix`、`GEOIP,netflix` 全归 Netflix 组）
 - 泛分类兜底（`category-ai-!cn` → `USNet`、`category-entertainment` → `Global TV` 等）不是平台，不适用 1b
+- **临时例外（v2.20 起，用户 2026-10-11 为减少代理组决定）**：规则 1b 文字不改，以下合并以注释形式临时生效，之后视情况改回。cfg 里原行以 `;【临时合并 v2.20】` 前缀注释保留，紧随其后的是临时行；改回时删临时行、去掉原行前缀（IP 区已注释的 `Copilot_IP` / `OpenAI_IP` / `AppleAI_IP` 引用的是原组名，改回后才能取消注释）
+  - ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding → `AI`
+  - Crypto.com / OKX / Binance → `Cryptocurrency`；Nvidia → 直挂 `USNet`
+  - Bahamut / Apple TV+ → `Global TV`
+- 用户已拍板的个案：`Game Platform` 不按商店拆（Epic / EA / PSN / eShop 等价格随账号区，切代理改变不了）；`Ozon` 留在 `Shopping Platform`
 
 ---
 

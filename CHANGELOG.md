@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-10-11 — v2.20
+
+为减少代理组做临时合并（策略组 66 → 55）。规则 1b 不改，合并以注释形式临时生效：cfg 原行以 `;【临时合并 v2.20】` 前缀注释保留，紧随其后是临时行，改回时删临时行、去掉前缀即可。默认出口全部不变。
+
+- ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding 六组合为一个 `AI` 组（默认 `USNet`，候选同原各组）
+- 撤回 v2.19 的拆分：Crypto.com / OKX / Binance（含 `Binance_IP`）并回 `Cryptocurrency`，Nvidia 回到直挂 `USNet`
+- Bahamut、Apple TV+ 并入 `Global TV`（均默认香港）
+- 用户决定：`PT` 列入自定义组（不拆、不并、不改候选）；`Game Platform` 不按商店拆；`Ozon` 留在 `Shopping Platform`
+- `design-notes.md` 第二节新增「临时例外」清单，`architecture.md`、`troubleshooting.md` 同步更新
+
+---
+
 ## 2026-10-11 — v2.19
 
 代理组拆分 / 合并规则定稿（用户 2026-10-11），写入 `docs/design-notes.md` 第二节作为唯一完整版本；按定稿规则重新过一遍全部代理组。策略组 62 → 66，默认出口全部不变。
