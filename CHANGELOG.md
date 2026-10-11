@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-10-10 — v2.15
+
+Bybit Global 与 Bybit EU 分到不同出口（配合 Openclash-Rule `58fed7d`）。
+
+- 新增策略组 `Bybit Global`，候选只有 `AUNet`（默认）、`BRNet`。Bybit Global 限制美国、加拿大、中国大陆、香港、新加坡，日本逐步限制，欧洲（EEA）用户归 Bybit EU；现有锚点里只有 AU / BR 不在名单上。不放 `Auto-Test`（可能选到受限地区节点）和 `Global Direct`（直连即中国大陆 IP）
+- `Bybit_Domain`（规则库已改为 Global 专用）由 `EUNet` 改指 `Bybit Global`，位置不变
+- 在它之前新增 `BybitEU_Domain` → `EUNet`（`bybit.eu`、EU App 的 AppsFlyer 编号、`t1.bycsi.com`）。必须排在前面：`Bybit_Domain` 含 `DOMAIN-KEYWORD,bybit`，也会命中 `bybit.eu`
+- `BybitEU_IP` 是空占位，按 `Bybit_IP` 的惯例不引用
+- `architecture.md` 平台默认锚点表与地区意图、`design-notes.md` 硬性顺序依赖同步更新
+
+---
+
 ## 2026-10-06 — v2.14
 
 新增「美国备用出口」USAlt，Meta AI（Muse）改走能正常使用的美国节点；家宽方案写入配置但保持注释。

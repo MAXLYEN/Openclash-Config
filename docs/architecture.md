@@ -45,7 +45,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 | `SGNet` | 🇸🇬 SG | 新加坡，亚洲金融分流中心，亚洲虚拟币业务平台基本都走这里 |
 | `JPNet` | 🇯🇵 JP | 日本本地服务与日本 Hulu，以及 Netflix（含 `fast.com`）/ YouTube / Emby / 即时通讯的默认出口；**没有专用节点的地区统一挂靠这里**（如菲律宾，内容已并入 `JP_Domain`） |
 | `UKNet` | 🇬🇧 UK | 英国，**只放本地服务**（银行、Britbox、UK 媒体），不承担通用代理 |
-| `EUNet` | 🇩🇪 DE | 欧洲 |
+| `EUNet` | 🇩🇪 DE | 欧洲；Bybit EU App 的出口（EEA 用户归 Bybit EU，必须走欧洲） |
 | `AUNet` | 🇦🇺 AU | 大洋洲 |
 | `BRNet` | 🇧🇷 BR | 南美 |
 | `USAlt` | 🇺🇸 US Alt | 美国备用出口：只给常用美国节点被平台降级的服务用（首批 Meta AI），日常美国流量仍走 `USNet` |
@@ -82,6 +82,7 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | TikTok / Twitter(X) / Snapchat / Shopping Platform | `USNet` | 美区服务 |
 | Talkatone / Paypal | `USNet` | 仅美 / 英 / 欧候选 |
 | Cryptocurrency / Google / Google FCM | `SGNet` | 新加坡是亚洲金融分流中心 |
+| Bybit Global | `AUNet` | 候选只有 `AUNet` / `BRNet`：Bybit Global 限制美国、加拿大、中国大陆、香港、新加坡，日本逐步限制，欧洲（EEA）归 Bybit EU。不放 `Auto-Test`（可能选到受限地区节点）和 `Global Direct`（直连即中国大陆 IP）。Bybit EU 走 `EUNet` |
 | Bahamut | `Proxy` | 台湾站，港节点最近 |
 | Telegram / Social Media | `Proxy` | 延迟优先；Meta 域名与 IP 由更早的 USNet 规则处理 |
 | GitHub / Microsoft / Apple / Speedtest | `Proxy` | 延迟优先 |
