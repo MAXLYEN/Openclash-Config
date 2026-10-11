@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-10-11 — v2.17
+
+继续按「每个平台保留自己的地区开关」拆分，补齐按地区比价的候选，注释掉空占位引用。策略组 60 → 62。
+
+- 新增平台组 `Meta`（默认 `USNet`，候选 US / HK / JP / SG / UK / EU / Auto-Test）。`GEOSITE,meta` 由 ⑩ 前移到 ⑧ 社交与通讯，先于 ⑨ `US_Domain`；`GEOIP,facebook` 同样改指 `Meta`。Meta AI 仍由 ③ `USAlt_Domain` 先命中走 `USAlt`。规则库拆出 `Meta_Domain` 后再在 `GEOSITE,meta` 之前引用
+- 新增平台组 `AI Coding`（候选同其他 AI 组，默认 `USNet`），`AI_Coding_US_Domain`（GitHub Copilot 等）由直挂 `USNet` 改指该组
+- `Steam` 候选补齐 `UKNet` / `EUNet` / `AUNet` / `BRNet`（各区定价不同）；`Spotify` 补上 `UKNet` / `EUNet` / `BRNet`
+- `Copilot_IP`、`OpenAI_IP`、`AppleAI_IP`、`IPCheck_IP` 是空占位，按 `Bybit_IP` 惯例注释掉引用（位置保留，有内容后取消注释）；冻结的 v1 仍引用，`INTENTIONALLY_EMPTY` 登记保留。`SelfHosted_Domain`、`USAlt_IP` 保持引用
+- 默认出口全部不变（Meta、AI Coding 仍默认美国），只是多了独立开关
+- `architecture.md`、`design-notes.md`、`troubleshooting.md` 同步更新；troubleshooting 里 `api.meta.ai` 的期望命中改为 `USAlt_Domain`（v2.14 起已如此）
+
+---
+
 ## 2026-10-11 — v2.16
 
 代理组拆分与合并：拆出香港本地、各 AI 平台与 Shopee 的独立开关；合并切地区没有意义的组。规则集引用与顺序不变，只改指向的组。策略组 61 → 60。

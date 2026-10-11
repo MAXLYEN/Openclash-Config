@@ -42,7 +42,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 |---|---|---|
 | `Proxy` | 🇭🇰 HK | 通用代理：GFW 兜底、强制代理（`Custom_Proxy` / `User_Domain`）、`Amazon_IP`、FINAL（`Others`）默认出口；平台组里的「香港」候选，主流流媒体（Disney+ / HBO）、社交、开发、游戏平台的默认出口 |
 | `HKNet` | 🇭🇰 HK | 香港本地：`HK_Domain`（港银行、券商、`.com.hk` 等）、`HK_IP`、`HK-wifi-call`。v2.16 从 `Proxy` 拆出，切换 `Proxy` 出口时香港本地服务仍走香港 |
-| `USNet` | 🇺🇸 US | 美国，美区专属服务（美国 Hulu、Talkatone 直接挂这里；PrimeVideo / Spotify / TikTok / X / 购物的默认出口）；美国本土金融与 VoIP；AI 平台组的默认出口 |
+| `USNet` | 🇺🇸 US | 美国，美区专属服务（美国 Hulu、Talkatone、Nvidia、Google Voice 直接挂这里；PrimeVideo / Spotify / TikTok / X / Meta / 购物的默认出口）；美国本土金融与 VoIP；AI 平台组与 AI 兜底 `category-ai-!cn` 的默认出口 |
 | `SGNet` | 🇸🇬 SG | 新加坡，亚洲金融分流中心，亚洲虚拟币业务平台基本都走这里 |
 | `JPNet` | 🇯🇵 JP | 日本本地服务与日本 Hulu，以及 Netflix（含 `fast.com`）/ YouTube / Emby / 即时通讯的默认出口；**没有专用节点的地区统一挂靠这里**（如菲律宾，内容已并入 `JP_Domain`） |
 | `UKNet` | 🇬🇧 UK | 英国，**只放本地服务**（银行、Britbox、UK 媒体），不承担通用代理 |
@@ -76,19 +76,20 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 |---|---|---|
 | Disney+ / HBO / Apple TV+ / Global TV | `Proxy` | 港区内容库，低延迟 |
 | Netflix | `JPNet` | 默认日本；域名、IP 与 GEOSITE / GEOIP 兜底均归 Netflix 组，保留其他地区候选 |
-| PrimeVideo / Spotify | `USNet` | 美区服务 |
+| PrimeVideo / Spotify | `USNet` | 美区服务；Spotify 各区价格不同，v2.17 补上 UK / EU / BR 候选 |
 | Emby | `JPNet` | Emby 服务器在日本 |
 | YouTube / Instant Messaging | `JPNet` | 日本节点 |
-| ChatGPT / Copilot / Claude / Gemini / Apple AI | `USNet` | 每个 AI 平台一个组，各自切地区（候选不含 `Proxy`，香港不在服务区）。Claude / Gemini / Apple AI 于 v2.16 从直挂 `USNet` 拆出 |
+| ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding | `USNet` | 每个 AI 平台一个组，各自切地区（候选不含 `Proxy`，香港不在服务区）。Claude / Gemini / Apple AI 于 v2.16、AI Coding（GitHub Copilot 等，`AI_Coding_US_Domain`）于 v2.17 从直挂 `USNet` 拆出 |
+| Meta | `USNet` | Facebook / Instagram / WhatsApp / Threads 等（`GEOSITE,meta`、`GEOIP,facebook`），v2.17 从直挂 `USNet` 拆出；Meta AI 走 `USAlt` |
 | TikTok / Twitter(X) / Snapchat / Shopping Platform | `USNet` | 美区服务 |
 | Paypal | `USNet` | 仅美 / 英 / 欧候选 |
 | Cryptocurrency / Google | `SGNet` | 新加坡是亚洲金融分流中心；Google 含 Google FCM（v2.16 并入） |
 | Shopee | `SGNet` | 东南亚 / 拉美多站点平台，候选另含 `BRNet`（巴西站）；v2.16 从 Shopping Platform 拆出 |
 | Bybit Global | `AUNet` | 候选只有 `AUNet` / `BRNet`：Bybit Global 限制美国、加拿大、中国大陆、香港、新加坡，日本逐步限制，欧洲（EEA）归 Bybit EU。不放 `Auto-Test`（可能选到受限地区节点）和 `Global Direct`（直连即中国大陆 IP）。Bybit EU 走 `EUNet` |
 | Bahamut | `Proxy` | 台湾站，港节点最近 |
-| Social Media | `Proxy` | 延迟优先，含 Telegram（v2.16 并入）；Meta 域名与 IP 由更早的 USNet 规则处理 |
+| Social Media | `Proxy` | 延迟优先，含 Telegram（v2.16 并入）；Meta 由更早的 Meta 组处理 |
 | GitHub / Microsoft / Apple / Speedtest | `Proxy` | 延迟优先 |
-| Game Platform / Steam | `Proxy` | 第二候选 `Global Direct` |
+| Game Platform / Steam | `Proxy` | 第二候选 `Global Direct`；Steam 各区定价不同，候选含全部 8 个地区锚点（v2.17 补齐 UK / EU / AU / BR） |
 | UnpopularNet / Others | `Proxy` | `UnpopularNet` 是给以后添加冷门地区节点预留的组；`Others` 即 `[]FINAL` 兜底 |
 | PT | `Global Direct` | PT 必须走本地出口 |
 | Domestic | `Global Direct` | 国区服务：网易云、小米、国内视频（v2.16 由 Netease / Xiaomi / Domestic TV 合并） |
@@ -127,7 +128,7 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | 规则 | Openclash-Rule 的 `USAlt_Domain`（首批：`DOMAIN-SUFFIX,meta.ai`、`DOMAIN,auth.meta.com`、`DOMAIN,accountscenter.meta.com`）与 `USAlt_IP`（空占位） |
 | 日常流量 | 不受影响，美国流量仍走 `USNet` |
 
-以后其他平台遇到同样问题（常用美国节点被降级），把它的域名加进 `USAlt_Domain` 即可，Config 不用改。登录会跳到 `www.facebook.com`，它仍走 `USNet`（常用节点）。2026-10-06 实测：USNet 切回常用节点、只有 Meta AI 走 RackNerd 时，`dev.meta.ai` 可正常登录，因此 `www.facebook.com` 不需要放进 `USAlt_Domain`。
+以后其他平台遇到同样问题（常用美国节点被降级），把它的域名加进 `USAlt_Domain` 即可，Config 不用改。登录会跳到 `www.facebook.com`，它走 `Meta` 组（默认 `USNet`，常用节点）。2026-10-06 实测：USNet 切回常用节点、只有 Meta AI 走 RackNerd 时，`dev.meta.ai` 可正常登录，因此 `www.facebook.com` 不需要放进 `USAlt_Domain`。
 
 ### 家宽专用（Residential，未启用）
 

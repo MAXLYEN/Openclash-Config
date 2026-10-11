@@ -123,7 +123,9 @@ OpenClash 日志搜 `RuleSet(`，逐条核对：
 | 域名 | 期望命中 | 期望分组 |
 |---|---|---|
 | `chatgpt.com` | `RuleSet(OpenAI_Domain)` | ChatGPT |
-| `api.meta.ai` | `RuleSet(US_Domain)` | USNet（落到通用社交组说明规则集未更新） |
+| `api.meta.ai` | `RuleSet(USAlt_Domain)` | USAlt（落到 `GeoSite(meta)` 说明出口覆盖名单没排在前面） |
+| `www.facebook.com` / `www.instagram.com` | `GeoSite(meta)` | Meta（默认 USNet） |
+| `api.githubcopilot.com` | `RuleSet(AI_Coding_US_Domain)` | AI Coding（默认 USNet） |
 | `copilot.microsoft.com` | `RuleSet(Copilot_Domain)` | Copilot |
 | `amazon.co.uk` | `RuleSet(Amazon_Domain)` | Shopping Platform |
 | `shopee.com.sg` | `RuleSet(Shopee_Domain)` | Shopee（默认 SGNet） |

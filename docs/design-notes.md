@@ -182,7 +182,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 
 一律作为**兜底补漏**，排在同组 `.list` 之后，由本地 list 主导匹配。
 
-Meta 使用 `US_Domain` → `GEOSITE,meta` → 通用通信/社交分类的顺序；未列入一方规则集但被 GeoSite 收录的 Meta 域名走 `USNet`。IP 侧的 `GEOIP,facebook` 同样走 `USNet`，主要覆盖无域名元数据的连接。GeoSite 分类数据需要随路由器数据库更新。
+Meta 自 v2.17 起有独立的 `Meta` 组（默认 `USNet`）：`GEOSITE,meta` 前移到 ⑧ 社交与通讯，先于 ⑨ `US_Domain`（平台维度在前），IP 侧的 `GEOIP,facebook` 同样归 `Meta`。Meta AI（`meta.ai`、`auth.meta.com` 等）仍由 ③ `USAlt_Domain` 先命中。`US_Domain` 里的 Meta 一方域名大多会被 `GEOSITE,meta` 先截走，待规则库拆出 `Meta_Domain` 后在 `GEOSITE,meta` 之前引用，GEOSITE 退为兜底。GeoSite 分类数据需要随路由器数据库更新。
 
 保持前置的三类例外：
 
