@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-10-11 — v2.19
+
+代理组拆分 / 合并规则定稿（用户 2026-10-11），写入 `docs/design-notes.md` 第二节作为唯一完整版本；按定稿规则重新过一遍全部代理组。策略组 62 → 66，默认出口全部不变。
+
+- 按规则 1b（多地区可用、各地区可用性不同 → 独立组）：
+  - `Crypto.com`、`OKX`、`Binance` 由 `Cryptocurrency` 拆出各自成组（各交易所按 IP 限制的地区不同，同 `Bybit Global` 先例）。默认仍是 `SGNet`，候选沿用 `Cryptocurrency`；`Binance_IP` 随之改指 `Binance`。`Cryptocurrency` 组只剩 ⑩ 区 `GEOSITE,category-cryptocurrency` 兜底
+  - `Nvidia_Domain` 由直挂 `USNet` 改为独立的 `Nvidia` 组（默认 `USNet`）
+- 规则 4 列出的用户自定义组（Self-Hosted、Custom-Made、UnpopularNet、USAlt、Bybit Global）未动；按规则 3，本版没有合并
+- `architecture.md`、`design-notes.md`、`troubleshooting.md` 同步更新
+
+---
+
 ## 2026-10-11 — v2.18
 
 - `Meta` 组在 `GEOSITE,meta` 之前引用规则库新拆出的 `Meta_Domain`（Openclash-Rule `dcfc117`，59 条 Meta 一方域名，从 `US_Domain` 移出），GEOSITE 退为兜底；`Meta_IP` 为空占位，按 `Bybit_IP` 惯例不引用。`meta.ai` / `muse.ai` / `llama.com` 留在 `US_Domain`，Meta AI 主域仍先由 ③ `USAlt_Domain` 命中。默认出口不变（Meta 组默认 `USNet`）

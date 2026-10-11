@@ -132,7 +132,7 @@ OpenClash 日志搜 `RuleSet(`，逐条核对：
 | `claude.ai` | `RuleSet(Claude_Domain)` | Claude（默认 USNet） |
 | `www.hangseng.com` | `RuleSet(HK_Domain)` | HKNet |
 | `www.gstatic.com` | `GeoSite(google-cn)` | Global Direct（预期行为，国内 CDN 直连更快；内联规则已于 v2.2 撤除） |
-| `crypto.com` | `RuleSet(CryptoCom_Domain)` | Cryptocurrency（落到 `GeoSite(category-cryptocurrency)` 说明规则集没加载） |
+| `crypto.com` | `RuleSet(CryptoCom_Domain)` | Crypto.com（落到 `GeoSite(category-cryptocurrency)` 说明规则集没加载） |
 | `www.dbs.com.sg` | `RuleSet(SG_Domain)` | SGNet |
 | `store.steampowered.com` | `RuleSet(Steam_Domain)` | Steam |
 | `gspe1-ssl.ls.apple.com` | `RuleSet(UK-wifi-call_Domain)` | UKNet（落到 `Direct_Domain` 说明它没排在前面） |

@@ -42,7 +42,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 |---|---|---|
 | `Proxy` | 🇭🇰 HK | 通用代理：GFW 兜底、强制代理（`Custom_Proxy` / `User_Domain`）、`Amazon_IP`、FINAL（`Others`）默认出口；平台组里的「香港」候选，主流流媒体（Disney+ / HBO）、社交、开发、游戏平台的默认出口 |
 | `HKNet` | 🇭🇰 HK | 香港本地：`HK_Domain`（港银行、券商、`.com.hk` 等）、`HK_IP`、`HK-wifi-call`。v2.16 从 `Proxy` 拆出，切换 `Proxy` 出口时香港本地服务仍走香港 |
-| `USNet` | 🇺🇸 US | 美国，美区专属服务（美国 Hulu、Talkatone、Nvidia、Google Voice 直接挂这里；PrimeVideo / Spotify / TikTok / X / Meta / 购物的默认出口）；美国本土金融与 VoIP；AI 平台组与 AI 兜底 `category-ai-!cn` 的默认出口 |
+| `USNet` | 🇺🇸 US | 美国，美区专属服务（美国 Hulu、Talkatone、Google Voice 直接挂这里；PrimeVideo / Spotify / TikTok / X / Meta / Nvidia / 购物的默认出口）；美国本土金融与 VoIP；AI 平台组与 AI 兜底 `category-ai-!cn` 的默认出口 |
 | `SGNet` | 🇸🇬 SG | 新加坡，亚洲金融分流中心，亚洲虚拟币业务平台基本都走这里 |
 | `JPNet` | 🇯🇵 JP | 日本本地服务与日本 Hulu，以及 Netflix（含 `fast.com`）/ YouTube / Emby / 即时通讯的默认出口；**没有专用节点的地区统一挂靠这里**（如菲律宾，内容已并入 `JP_Domain`） |
 | `UKNet` | 🇬🇧 UK | 英国，**只放本地服务**（银行、Britbox、UK 媒体），不承担通用代理 |
@@ -83,7 +83,8 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | Meta | `USNet` | Facebook / Instagram / WhatsApp / Threads 等（`GEOSITE,meta`、`GEOIP,facebook`），v2.17 从直挂 `USNet` 拆出；Meta AI 走 `USAlt` |
 | TikTok / Twitter(X) / Snapchat / Shopping Platform | `USNet` | 美区服务 |
 | Paypal | `USNet` | 仅美 / 英 / 欧候选 |
-| Cryptocurrency / Google | `SGNet` | 新加坡是亚洲金融分流中心；Google 含 Google FCM（v2.16 并入） |
+| Crypto.com / OKX / Binance / Cryptocurrency / Google | `SGNet` | 新加坡是亚洲金融分流中心。各交易所按 IP 限制的地区不同，v2.19 起各自成组；Cryptocurrency 只做 `GEOSITE,category-cryptocurrency` 泛分类兜底。Google 含 Google FCM（v2.16 并入） |
+| Nvidia | `USNet` | 官网、驱动、GeForce NOW、AI 服务；v2.19 由直挂 `USNet` 拆为独立组 |
 | Shopee | `SGNet` | 东南亚 / 拉美多站点平台，候选另含 `BRNet`（巴西站）；v2.16 从 Shopping Platform 拆出 |
 | Bybit Global | `AUNet` | 候选只有 `AUNet` / `BRNet`：Bybit Global 限制美国、加拿大、中国大陆、香港、新加坡，日本逐步限制，欧洲（EEA）归 Bybit EU。不放 `Auto-Test`（可能选到受限地区节点）和 `Global Direct`（直连即中国大陆 IP）。Bybit EU 走 `EUNet` |
 | Bahamut | `Proxy` | 台湾站，港节点最近 |

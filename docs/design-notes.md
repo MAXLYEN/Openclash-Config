@@ -120,15 +120,24 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 
 ---
 
-## 二、分组归属
+## 二、代理组拆分 / 合并规则
 
-- 文件名与分组名对应则用**专属分组**（`Netflix_Domain` → `Netflix`）
-- 仅共用地区节点则归**地区锚点组**（`AU_Domain` → `AUNet`）
-- 没有专用节点的地区挂靠到最近的锚点（菲律宾 → `JPNet`，内容并入 `JP_Domain`）
-- Netflix 的域名、IP provider 与 GEOSITE / GEOIP 兜底均归 Netflix 组，默认 `JPNet`，保留手动切换地区能力。日本 Hulu 直接归 `JPNet`，美国 Hulu 直接归 `USNet`（v2.16 起；只能在美国用，原 Hulu 组的其他地区候选都打不开），Talkatone 同理归 `USNet`
-- **平台组不因候选列表相同而合并**：同一平台在不同地区获取的内容、价格不同（如 Steam 区服定价），每个平台保留自己的地区开关。只合并切地区确实没有意义的组（v2.16：网易云 / 小米并入 `Domestic`、Google FCM 并入 `Google`、Telegram 并入 `Social Media`）
-- `UnpopularNet` 是给以后添加冷门地区节点预留的组，不是冗余组
-- `Proxy` 是通用代理（GFW 兜底、强制代理、FINAL 默认），`HKNet` 只承载香港本地（`HK_Domain` / `HK_IP` / `HK-wifi-call`）；两者第一候选都是 🇭🇰 HK Node，分开后切换 `Proxy` 出口不影响香港站点（v2.16 起）
+用户 2026-10-11 定稿。本节是唯一完整版本，`CLAUDE.md` 与 Claude 记忆只指向这里；改规则先改这里。
+
+1. **归属**
+   - a. 只能在一个地区使用的平台 → 直接挂该地区锚点（美国 Hulu、Talkatone、Google Voice → `USNet`；日本 Hulu → `JPNet`；英国媒体 → `UKNet`；Bybit EU → `EUNet`；各地 Wi-Fi 通话 → 对应锚点）
+   - b. 能在多个地区使用、且各地区内容 / 价格 / 可用性不同的平台 → 独立平台组（Netflix、Steam、Claude、Meta 等）
+   - c. 没有专用节点的地区 → 挂靠最近锚点（菲律宾 → `JPNet`，内容并入 `JP_Domain`）
+2. **拆分**：一个组里混着「地区需求不同」的服务时拆开（`HKNet` 从 `Proxy` 拆出、`Shopee` 从 `Shopping Platform` 拆出）
+3. **合并**：候选列表相同不是合并理由；只有切地区对这些服务都没有意义时才合并，并且由用户逐个拍板（已拍板：网易云 / 小米 / 国内视频 → `Domestic`，Google FCM → `Google`，Telegram → `Social Media`）
+4. **不动**：用户自定义的组不拆、不并、不改候选 —— `Self-Hosted`、`Custom-Made`、`UnpopularNet`（给以后的冷门地区节点预留）、`USAlt`、`Bybit Global`
+5. **记录**：以本节为准；每次拆 / 并在 cfg 对应行写原因、记 CHANGELOG，并同步 `architecture.md` 第四节
+
+补充说明（不属于规则本身）：
+
+- `Proxy` 是通用代理（GFW 兜底、强制代理、FINAL 默认），`HKNet` 只承载香港本地（`HK_Domain` / `HK_IP` / `HK-wifi-call`）；两者第一候选都是 🇭🇰 HK Node。平台组里的「香港」候选写 `Proxy`
+- 平台组的 provider 与对应 GEOSITE / GEOIP 兜底归同一组（如 Netflix 的域名、IP、`GEOSITE,netflix`、`GEOIP,netflix` 全归 Netflix 组）
+- 泛分类兜底（`category-ai-!cn` → `USNet`、`category-entertainment` → `Global TV` 等）不是平台，不适用 1b
 
 ---
 
@@ -166,7 +175,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 - **`AppleAI_Domain` 必须在 `Apple_Domain` / `GEOSITE,apple` 之前**，Apple AI 走独立的 `Apple AI` 组（默认 `USNet`）
 - **`Netflix_Domain` / `GEOSITE,netflix` 必须在 `Speedtest_Domain` / `GEOSITE,category-speedtest` 之前**。双方都覆盖 `fast.com`，Netflix 规则先命中才能使该测速站与 Netflix 的其余流量一起跟随 Netflix 组，默认 `JPNet`。v2.13 起
 - **`BybitEU_Domain`（→ EUNet）必须在 `Bybit_Domain`（→ Bybit Global）之前**：`Bybit_Domain` 含 `DOMAIN-KEYWORD,bybit`，排在前面会把 `bybit.eu` 也截走，EU App 就走不到欧洲出口
-- **`CryptoCom_Domain` 在 `OKX_Domain` 之前**，与 Cryptocurrency 组其余规则集同在 ⑧ 金融区。`crypto.com` 单独成集，不混进 OKX / Binance 规则集；未收录的币圈域名仍由 ⑩ 区 `GEOSITE,category-cryptocurrency` 兜底。v2.11 起
+- **`CryptoCom_Domain` 在 `OKX_Domain` 之前**，同在 ⑧ 金融区（v2.19 起三家交易所各自成组：Crypto.com / OKX / Binance）。`crypto.com` 单独成集，不混进 OKX / Binance 规则集；未收录的币圈域名仍由 ⑩ 区 `GEOSITE,category-cryptocurrency` 兜底。v2.11 起
 - **`Hulu_Domain` 必须在 `Disney_Domain` / `GEOSITE,disney` 之前**。geosite:disney（v2fly 与 MetaCubeX 均如此）收录了全部 48 条 Hulu 域名（`+.hulu.com`、`+.hulu.jp`、`huluim`、`callhulu` 等），`Disney_Domain` 也有 `hulu.playback.edge.bamgrid.com`；排在后面时 Hulu 规则完全空转，Hulu 走 Disney+ 组（默认香港）而 Hulu 只在美国可用。`Hulu_Domain` 里的 `112263.com`、`findyourlimits.com` 等在 geosite:disney 中也是作为 Hulu 条目出现的，前置不会截走 Disney 本身的域名。v2.9 起改正
 - **`HuluJP_Domain` 必须在 `Hulu_Domain` 与 `GEOSITE,disney` 之前**。日本 Hulu（`hulu.jp`、`happyon.jp`、`hjholdings.jp`、`streaks.jp` 等）需要日本 IP，归锚点组 `JPNet`（仅共用地区节点）。geosite:disney 含 `+.hulu.jp`，排在它后面永远命中不到；`hulu.jp` 以外的 5 个域名此前落进 `GlobalMedia_Domain`（Global TV）。v2.11 起
 - **⑩ 区 `category-games-!cn` 必须在 `category-entertainment` 之前**。后者收录了游戏分类的绝大部分条目（`category-games` 1123 条中 859 条），排在后面时本地游戏列表未收录的游戏域名（`epicgamescdn.com`、`diablo.com`、`ubistatic*-a.akamaihd.net` 等 353 条）落进 Global TV，Game Platform 切地区 / 直连时不跟着切。v2.9 起改正
