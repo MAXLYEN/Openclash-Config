@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-10-11 — v2.18
+
+- `Meta` 组在 `GEOSITE,meta` 之前引用规则库新拆出的 `Meta_Domain`（Openclash-Rule `dcfc117`，59 条 Meta 一方域名，从 `US_Domain` 移出），GEOSITE 退为兜底；`Meta_IP` 为空占位，按 `Bybit_IP` 惯例不引用。`meta.ai` / `muse.ai` / `llama.com` 留在 `US_Domain`，Meta AI 主域仍先由 ③ `USAlt_Domain` 命中。默认出口不变（Meta 组默认 `USNet`）
+
+---
+
 ## 2026-10-11 — v2.17
 
 继续按「每个平台保留自己的地区开关」拆分，补齐按地区比价的候选，注释掉空占位引用。策略组 60 → 62。
