@@ -33,7 +33,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 
 - **锚点之间不互相引用**。Clash 加载时会检测策略组循环引用并直接失败，`validate_ini.py` 里有对应的 DFS 检查
 - 锚点组末尾保留 `.*`，需要钉死某个具体节点（流媒体解锁）时在锚点层改一次即可
-- **同地区拆出组与原组一起出现**（v2.21 起）：平台组候选里有 `USNet` 必有 `USAlt`、有 `Proxy` 必有 `HKNet`，拆出组紧跟原组；`USNet` 锚点第二候选是 🇺🇸 US Alt 池。由 `validate_ini.py` 的 `PAIRED_GROUPS` 检查，用户自定义组除外。规则见 design-notes 第二节规则 6
+- **`USNet` 与 `USAlt` 同时出现**（v2.22 起）：凡能选 `USNet` 的平台组（含用户自定义组）都能选 `USAlt`，紧跟 `USNet`；节点池与锚点组不动。由 `validate_ini.py` 的 `PAIRED_GROUPS` 检查，规则见 design-notes 第二节规则 6
 
 ---
 
@@ -81,7 +81,7 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | Emby | `JPNet` | Emby 服务器在日本 |
 | YouTube / Instant Messaging | `JPNet` | 日本节点 |
 | AI | `USNet` | ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding 临时合为一个 AI 组（v2.20 临时合并，见 design-notes 第二节）；候选不含 `Proxy`，香港不在服务区 |
-| Meta | `USNet` | Facebook / Instagram / WhatsApp / Threads 等（`GEOSITE,meta`、`GEOIP,facebook`），v2.17 从直挂 `USNet` 拆出；Meta AI 走 `USAlt` |
+| Meta | `USAlt` | Facebook / Instagram / WhatsApp / Threads 等（`Meta_Domain`、`GEOSITE,meta`、`GEOIP,facebook`），v2.17 从直挂 `USNet` 拆出，v2.22 默认改为 `USAlt`（第二候选 `USNet`）；Meta AI 由 ③ `USAlt_Domain` 直接走 `USAlt` |
 | TikTok / Twitter(X) / Snapchat / Shopping Platform | `USNet` | 美区服务 |
 | Paypal | `USNet` | 仅美 / 英 / 欧候选 |
 | Cryptocurrency / Google | `SGNet` | 新加坡是亚洲金融分流中心；Crypto.com / OKX / Binance 临时并回 Cryptocurrency（v2.20 临时合并，见 design-notes 第二节）。Google 含 Google FCM（v2.16 并入） |
@@ -128,7 +128,7 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | 规则 | Openclash-Rule 的 `USAlt_Domain`（首批：`DOMAIN-SUFFIX,meta.ai`、`DOMAIN,auth.meta.com`、`DOMAIN,accountscenter.meta.com`）与 `USAlt_IP`（空占位） |
 | 日常流量 | 不受影响，美国流量仍走 `USNet` |
 
-以后其他平台遇到同样问题（常用美国节点被降级），把它的域名加进 `USAlt_Domain` 即可，Config 不用改。登录会跳到 `www.facebook.com`，它走 `Meta` 组（默认 `USNet`，常用节点）。2026-10-06 实测：USNet 切回常用节点、只有 Meta AI 走 RackNerd 时，`dev.meta.ai` 可正常登录，因此 `www.facebook.com` 不需要放进 `USAlt_Domain`。
+以后其他平台遇到同样问题（常用美国节点被降级），把它的域名加进 `USAlt_Domain` 即可，Config 不用改。登录会跳到 `www.facebook.com`，它走 `Meta` 组（v2.22 起默认 `USAlt`；v2.21 及以前默认 `USNet` 常用节点）。2026-10-06 实测：USNet 切回常用节点、只有 Meta AI 走 RackNerd 时，`dev.meta.ai` 可正常登录，因此 `www.facebook.com` 不需要放进 `USAlt_Domain`。
 
 ### 家宽专用（Residential，未启用）
 

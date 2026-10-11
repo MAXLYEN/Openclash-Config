@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-10-11 — v2.22
+
+按用户澄清修正 v2.21：只有 `USNet` 与 `USAlt` 成对，节点池与地区锚点组不动，自定义组也适用；Meta 默认出口改为 `USAlt`。
+
+- 撤回 `HKNet` 与 `Proxy` 的成对（从 26 个平台组移除 `HKNet` 候选）
+- 撤回 `USNet` 锚点里加的 🇺🇸 US Alt 池（锚点组不动）
+- 自定义组 `Self-Hosted`、`Custom-Made` 补上 `USAlt`（紧跟 `USNet`）；`PT`、`UnpopularNet`、`Bybit Global` 本来没有 `USNet`，不变
+- `Meta` 组候选改为 `USAlt` 在首位、`USNet` 第二：Facebook / Instagram / WhatsApp 等默认走美国备用出口（🇺🇸 US Alt 池，RackNerd 优先）。**这是本版唯一的出口变化**
+- `validate_ini.py` 的 `PAIRED_GROUPS` 只剩 `{'USNet': 'USAlt'}`，豁免名单只剩地区锚点组
+- design-notes 第二节规则 6 改写，`architecture.md`、`troubleshooting.md` 同步
+
+---
+
 ## 2026-10-11 — v2.21
 
 新规则：因特殊需求拆出的同地区代理组必须与原组一起出现（用户 2026-10-11 指定，design-notes 第二节规则 6）。默认出口不变，只是多了候选。

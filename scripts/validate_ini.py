@@ -62,14 +62,11 @@ INTENTIONALLY_EMPTY = {
     'USAlt_IP.yaml',
 }
 
-# 同地区成对出现的代理组（用户 2026-10-11 指定）：因特殊需求从某组拆出的同地区组，
-# 必须与原组一起出现 —— 任何候选里有「原组」的平台组，也必须有「拆出组」。
-# 以后再按特殊需求拆出同地区组，在这里加一对即可。规则见 docs/design-notes.md 第二节规则 6
-PAIRED_GROUPS = {'USNet': 'USAlt', 'Proxy': 'HKNet'}
-# 不参与成对检查的组：锚点组本身（锚点之间不互相引用），以及用户自定义组
-# （design-notes 第二节规则 4：不改候选）
-PAIRED_EXEMPT = {'Proxy', 'HKNet', 'USNet', 'USAlt', 'JPNet', 'SGNet', 'UKNet', 'EUNet', 'AUNet', 'BRNet',
-                 'Self-Hosted', 'Custom-Made', 'UnpopularNet', 'Bybit Global', 'PT'}
+# 必须成对出现的代理组（用户 2026-10-11 指定）：凡能选 USNet 的平台组（含用户自定义组）
+# 都必须也能选 USAlt。以后需要别的成对关系时在这里加一对。规则见 docs/design-notes.md 第二节规则 6
+PAIRED_GROUPS = {'USNet': 'USAlt'}
+# 不参与成对检查的组：地区锚点组（锚点之间不互相引用；节点池不是 select 引用组，自然不触发）
+PAIRED_EXEMPT = {'Proxy', 'HKNet', 'USNet', 'USAlt', 'JPNet', 'SGNet', 'UKNet', 'EUNet', 'AUNet', 'BRNet'}
 
 errors, warns = [], []
 # 头部注释里带这个标记的文件，其 ERROR 降级为 WARN，不阻断构建。
@@ -191,14 +188,14 @@ def check(path):
         state[n] = 2
     for n in graph: dfs(n, [])
 
-    # 4a. 同地区拆出组必须与原组一起出现（已停止维护的文件没有这些拆出组，跳过）
+    # 4a. 成对组：能选 USNet 就必须能选 USAlt（已停止维护的文件没有 USAlt，跳过）
     for name, cands in groups.items() if f not in deprecated else []:
         if name in PAIRED_EXEMPT:
             continue
         refs = [c[2:].strip() for c in cands if c.startswith('[]')]
         for base, extra in PAIRED_GROUPS.items():
             if base in refs and extra not in refs:
-                err(f, '分组 %s 的候选有 %s 却没有 %s：同地区拆出组必须与原组一起出现' % (name, base, extra))
+                err(f, '分组 %s 的候选有 %s 却没有 %s：两者必须同时出现' % (name, base, extra))
 
     # 5. 定义了却没有任何规则指向的分组（节点池与 Auto-Test 类除外：它们靠候选引用）
     # 已停止维护的文件跳过：死分组无害，而冻结文件里的死分组永远不会被清理

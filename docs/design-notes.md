@@ -131,7 +131,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 2. **拆分**：一个组里混着「地区需求不同」的服务时拆开（`HKNet` 从 `Proxy` 拆出、`Shopee` 从 `Shopping Platform` 拆出）
 3. **合并**：候选列表相同不是合并理由；只有切地区对这些服务都没有意义时才合并，并且由用户逐个拍板（已拍板：网易云 / 小米 / 国内视频 → `Domestic`，Google FCM → `Google`，Telegram → `Social Media`）
 4. **不动**：用户自定义的组不拆、不并、不改候选 —— `Self-Hosted`、`Custom-Made`、`UnpopularNet`（给以后的冷门地区节点预留）、`USAlt`、`Bybit Global`、`PT`
-6. **同地区拆出组与原组一起出现**（用户 2026-10-11 指定）：因特殊需求从某组拆出的同地区组，必须和原组一起出现 —— 任何平台组的候选里有原组，就必须有拆出组，拆出组紧跟原组。现有两对：`USNet` + `USAlt`、`Proxy` + `HKNet`；`USNet` 锚点的候选里也放 🇺🇸 US Alt 池（锚点之间不能互相引用，故放池）。以后新增同地区拆出组时在 `validate_ini.py` 的 `PAIRED_GROUPS` 加一对，校验会强制检查。规则 4 的自定义组不受本条约束
+6. **`USNet` 与 `USAlt` 同时出现**（用户 2026-10-11 指定）：凡能选 `USNet` 的平台组都必须也能选 `USAlt`，`USAlt` 紧跟 `USNet`；**用户自定义组也适用**（规则 4 的「不改候选」在这一条上让位）。节点池与地区锚点组不动。`HKNet` 不与 `Proxy` 成对。由 `validate_ini.py` 的 `PAIRED_GROUPS` 强制检查
 7. **记录**：以本节为准；每次拆 / 并在 cfg 对应行写原因、记 CHANGELOG，并同步 `architecture.md` 第四节
 
 补充说明（不属于规则本身）：
@@ -139,7 +139,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 - `Proxy` 是通用代理（GFW 兜底、强制代理、FINAL 默认），`HKNet` 只承载香港本地（`HK_Domain` / `HK_IP` / `HK-wifi-call`）；两者第一候选都是 🇭🇰 HK Node。平台组里的「香港」候选写 `Proxy`
 - 平台组的 provider 与对应 GEOSITE / GEOIP 兜底归同一组（如 Netflix 的域名、IP、`GEOSITE,netflix`、`GEOIP,netflix` 全归 Netflix 组）
 - 泛分类兜底（`category-ai-!cn` → `USNet`、`category-entertainment` → `Global TV` 等）不是平台，不适用 1b
-- **临时例外（v2.20 起，用户 2026-10-11 为减少代理组决定）**：规则 1b 文字不改，以下合并以注释形式临时生效，之后视情况改回。cfg 里原行以 `;【临时合并 v2.20】` 前缀注释保留，紧随其后的是临时行；改回时删临时行、去掉原行前缀，并按规则 6 给恢复的组补上 `USAlt` / `HKNet`（IP 区已注释的 `Copilot_IP` / `OpenAI_IP` / `AppleAI_IP` 引用的是原组名，改回后才能取消注释）
+- **临时例外（v2.20 起，用户 2026-10-11 为减少代理组决定）**：规则 1b 文字不改，以下合并以注释形式临时生效，之后视情况改回。cfg 里原行以 `;【临时合并 v2.20】` 前缀注释保留，紧随其后的是临时行；改回时删临时行、去掉原行前缀，并按规则 6 给恢复的组补上 `USAlt`（IP 区已注释的 `Copilot_IP` / `OpenAI_IP` / `AppleAI_IP` 引用的是原组名，改回后才能取消注释）
   - ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding → `AI`
   - Crypto.com / OKX / Binance → `Cryptocurrency`；Nvidia → 直挂 `USNet`
   - Bahamut / Apple TV+ → `Global TV`
@@ -197,7 +197,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 
 一律作为**兜底补漏**，排在同组 `.list` 之后，由本地 list 主导匹配。
 
-Meta 自 v2.17 起有独立的 `Meta` 组（默认 `USNet`）：`GEOSITE,meta` 前移到 ⑧ 社交与通讯，先于 ⑨ `US_Domain`（平台维度在前），IP 侧的 `GEOIP,facebook` 同样归 `Meta`。Meta AI（`meta.ai`、`auth.meta.com` 等）仍由 ③ `USAlt_Domain` 先命中。v2.18 起 `Meta_Domain`（规则库从 `US_Domain` 拆出的 59 条 Meta 一方域名）排在 `GEOSITE,meta` 之前，GEOSITE 退为兜底；`meta.ai` / `muse.ai` / `llama.com` 留在 `US_Domain`。GeoSite 分类数据需要随路由器数据库更新。
+Meta 自 v2.17 起有独立的 `Meta` 组（v2.22 起默认 `USAlt`，第二候选 `USNet`）：`GEOSITE,meta` 前移到 ⑧ 社交与通讯，先于 ⑨ `US_Domain`（平台维度在前），IP 侧的 `GEOIP,facebook` 同样归 `Meta`。Meta AI（`meta.ai`、`auth.meta.com` 等）仍由 ③ `USAlt_Domain` 先命中。v2.18 起 `Meta_Domain`（规则库从 `US_Domain` 拆出的 59 条 Meta 一方域名）排在 `GEOSITE,meta` 之前，GEOSITE 退为兜底；`meta.ai` / `muse.ai` / `llama.com` 留在 `US_Domain`。GeoSite 分类数据需要随路由器数据库更新。
 
 保持前置的三类例外：
 

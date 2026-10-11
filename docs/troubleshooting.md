@@ -124,7 +124,7 @@ OpenClash 日志搜 `RuleSet(`，逐条核对：
 |---|---|---|
 | `chatgpt.com` | `RuleSet(OpenAI_Domain)` | AI |
 | `api.meta.ai` | `RuleSet(USAlt_Domain)` | USAlt（落到 `GeoSite(meta)` 说明出口覆盖名单没排在前面） |
-| `www.facebook.com` / `www.instagram.com` | `GeoSite(meta)` | Meta（默认 USNet） |
+| `www.facebook.com` / `www.instagram.com` | `RuleSet(Meta_Domain)` | Meta（默认 USAlt） |
 | `api.githubcopilot.com` | `RuleSet(AI_Coding_US_Domain)` | AI（默认 USNet） |
 | `copilot.microsoft.com` | `RuleSet(Copilot_Domain)` | AI |
 | `amazon.co.uk` | `RuleSet(Amazon_Domain)` | Shopping Platform |
