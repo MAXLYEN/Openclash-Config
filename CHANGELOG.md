@@ -6,6 +6,33 @@
 
 ---
 
+## 2026-10-11 — v2.16
+
+代理组拆分与合并：拆出香港本地、各 AI 平台与 Shopee 的独立开关；合并切地区没有意义的组。规则集引用与顺序不变，只改指向的组。策略组 61 → 60。
+
+拆分：
+
+- 新增锚点 `HKNet`（第一候选 🇭🇰 HK Node），`HK_Domain`、`HK-wifi-call_Domain`、`HK_IP` 由 `Proxy` 改指 `HKNet`。`Proxy` 只做通用代理（GFW 兜底、强制代理、`User_Domain`、`Amazon_IP`、FINAL 默认），切换 `Proxy` 出口时香港银行、券商等本地服务仍走香港。平台组里的「香港」候选仍写 `Proxy`
+- 新增平台组 `Claude`、`Gemini`、`Apple AI`（候选同 ChatGPT：US / JP / SG / UK / EU / Auto-Test，默认 `USNet`）。`Claude_Domain`、`Gemini_Domain`、`AppleAI_Domain`、`AppleAI_IP` 由直挂 `USNet` 改指各自的组，AI 平台不再只能跟着整个 USNet 切换
+- 新增平台组 `Shopee`（默认 `SGNet`，候选另含 `BRNet`），`Shopee_Domain` 由 `Shopping Platform`（默认美国）改指 `Shopee`
+
+合并：
+
+- `Netease`、`Xiaomi`、`Domestic TV` 合并为 `Domestic`（默认直连，候选 Direct / Proxy / JPNet / Auto-Test）
+- 删除 `Hulu` 组，`Hulu_Domain` 直接归 `USNet`（Hulu 只在美国可用，其他地区候选都打不开；与 `HuluJP_Domain` → `JPNet` 同模式）。`Hulu_Domain` 仍排在 `Disney_Domain` / `GEOSITE,disney` 之前
+- 删除 `Talkatone` 组，`GEOSITE,talkatone` 直接归 `USNet`（美国号码 VoIP）
+- `Google FCM` 并入 `Google`（`GoogleFCM_Domain`、`GEOSITE,googlefcm`、`GoogleFCM_IP`，位置不变）
+- `Telegram` 并入 `Social Media`（`Telegram_Domain`、`Telegram_IP`、`GEOIP,telegram`，位置不变，仍先于 ⑩ `category-communication`）
+
+其他：
+
+- `UnpopularNet` 加注释说明它是给以后添加冷门地区节点预留的组；`Steam` 等平台组按「不同地区获取的内容不同」原则保留独立
+- 更新过时的 Copilot 注释：`Copilot_Domain` 已清理为 15 条微软 / Bing 域名，与 `OpenAI_Domain` 交集为 0，顺序保持不变
+- 被删除或改名的组，面板选择记录会丢失、回到第一候选；更新订阅后请检查 `Domestic`、`Social Media`、`Google` 的选择
+- `architecture.md`、`design-notes.md`、`troubleshooting.md`、`README.md` 同步更新
+
+---
+
 ## 2026-10-10 — v2.15
 
 Bybit Global 与 Bybit EU 分到不同出口（配合 Openclash-Rule `58fed7d`）。

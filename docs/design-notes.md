@@ -125,7 +125,10 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 - 文件名与分组名对应则用**专属分组**（`Netflix_Domain` → `Netflix`）
 - 仅共用地区节点则归**地区锚点组**（`AU_Domain` → `AUNet`）
 - 没有专用节点的地区挂靠到最近的锚点（菲律宾 → `JPNet`，内容并入 `JP_Domain`）
-- Netflix 的域名、IP provider 与 GEOSITE / GEOIP 兜底均归 Netflix 组，默认 `JPNet`，保留手动切换地区能力。日本 Hulu 直接归 `JPNet`，美国 Hulu 保留 Hulu 组（默认 `USNet`）
+- Netflix 的域名、IP provider 与 GEOSITE / GEOIP 兜底均归 Netflix 组，默认 `JPNet`，保留手动切换地区能力。日本 Hulu 直接归 `JPNet`，美国 Hulu 直接归 `USNet`（v2.16 起；只能在美国用，原 Hulu 组的其他地区候选都打不开），Talkatone 同理归 `USNet`
+- **平台组不因候选列表相同而合并**：同一平台在不同地区获取的内容、价格不同（如 Steam 区服定价），每个平台保留自己的地区开关。只合并切地区确实没有意义的组（v2.16：网易云 / 小米并入 `Domestic`、Google FCM 并入 `Google`、Telegram 并入 `Social Media`）
+- `UnpopularNet` 是给以后添加冷门地区节点预留的组，不是冗余组
+- `Proxy` 是通用代理（GFW 兜底、强制代理、FINAL 默认），`HKNet` 只承载香港本地（`HK_Domain` / `HK_IP` / `HK-wifi-call`）；两者第一候选都是 🇭🇰 HK Node，分开后切换 `Proxy` 出口不影响香港站点（v2.16 起）
 
 ---
 
@@ -157,18 +160,18 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 
 - **出口覆盖名单（`USAlt_Domain`，以及启用后的 `Residential_Domain`）必须在所有平台专属与地区文件之前**。它们按「出口要求」归类，例如 `meta.ai` 同时出现在 `US_Domain` 里，`USAlt_Domain` 必须先命中才能把 Meta AI 送到备用美国出口。设计见 [architecture.md](architecture.md) 第六节
 - **地区文件必须在平台专属之后**。放前面会吃掉平台组 —— `US_Domain` 的 AI 关键词曾让 ChatGPT / Copilot / TikTok 三个组完全空转
-- **`Copilot_Domain` 必须在 `OpenAI_Domain` 之后**。`Copilot_Domain` 有 26 条是 `OpenAI_Domain` 的原样复制（含 `openai.com`、`chatgpt.com`），前置会让 ChatGPT 组空转；`OpenAI_Domain` 不含 bing / msn / copilot 条目，后置不影响 Copilot 命中。v2.0 曾反过来排，v2.1 起改正
+- **`Copilot_Domain` 在 `OpenAI_Domain` 之后**。早期 `Copilot_Domain` 有 26 条是 `OpenAI_Domain` 的原样复制（含 `openai.com`、`chatgpt.com`），前置会让 ChatGPT 组空转。v2.0 曾反过来排，v2.1 起改正。2026-10-11 核对：`Copilot_Domain` 已清理为 15 条微软 / Bing 域名，两者交集为 0，顺序已无实际影响，保持现状防止以后再混入重复条目
 - **`PT_Domain` 必须在 `Direct_Domain` 之前**，否则 100 条被吃掉
 - **`UK-wifi-call_Domain` 必须在 `Direct_Domain` 之前**，否则 `ls.apple.com` 会截走 Apple 地区检测端点 `gspe1-ssl.ls.apple.com`，英国 Wi-Fi 通话被识别为国内
-- **`AppleAI_Domain` 必须在 `Apple_Domain` / `GEOSITE,apple` 之前**，Apple AI 固定走 `USNet`
+- **`AppleAI_Domain` 必须在 `Apple_Domain` / `GEOSITE,apple` 之前**，Apple AI 走独立的 `Apple AI` 组（默认 `USNet`）
 - **`Netflix_Domain` / `GEOSITE,netflix` 必须在 `Speedtest_Domain` / `GEOSITE,category-speedtest` 之前**。双方都覆盖 `fast.com`，Netflix 规则先命中才能使该测速站与 Netflix 的其余流量一起跟随 Netflix 组，默认 `JPNet`。v2.13 起
 - **`BybitEU_Domain`（→ EUNet）必须在 `Bybit_Domain`（→ Bybit Global）之前**：`Bybit_Domain` 含 `DOMAIN-KEYWORD,bybit`，排在前面会把 `bybit.eu` 也截走，EU App 就走不到欧洲出口
 - **`CryptoCom_Domain` 在 `OKX_Domain` 之前**，与 Cryptocurrency 组其余规则集同在 ⑧ 金融区。`crypto.com` 单独成集，不混进 OKX / Binance 规则集；未收录的币圈域名仍由 ⑩ 区 `GEOSITE,category-cryptocurrency` 兜底。v2.11 起
-- **`Hulu_Domain` 必须在 `Disney_Domain` / `GEOSITE,disney` 之前**。geosite:disney（v2fly 与 MetaCubeX 均如此）收录了全部 48 条 Hulu 域名（`+.hulu.com`、`+.hulu.jp`、`huluim`、`callhulu` 等），`Disney_Domain` 也有 `hulu.playback.edge.bamgrid.com`；排在后面时 Hulu 组完全空转，Hulu 走 Disney+ 组（默认香港）而 Hulu 只在美国可用。`Hulu_Domain` 里的 `112263.com`、`findyourlimits.com` 等在 geosite:disney 中也是作为 Hulu 条目出现的，前置不会截走 Disney 本身的域名。v2.9 起改正
-- **`HuluJP_Domain` 必须在 `Hulu_Domain` 与 `GEOSITE,disney` 之前**。日本 Hulu（`hulu.jp`、`happyon.jp`、`hjholdings.jp`、`streaks.jp` 等）需要日本 IP，归锚点组 `JPNet`（仅共用地区节点，先例 `AppleAI_Domain` → `USNet`）。geosite:disney 含 `+.hulu.jp`，排在它后面永远命中不到；`hulu.jp` 以外的 5 个域名此前落进 `GlobalMedia_Domain`（Global TV）。v2.11 起
+- **`Hulu_Domain` 必须在 `Disney_Domain` / `GEOSITE,disney` 之前**。geosite:disney（v2fly 与 MetaCubeX 均如此）收录了全部 48 条 Hulu 域名（`+.hulu.com`、`+.hulu.jp`、`huluim`、`callhulu` 等），`Disney_Domain` 也有 `hulu.playback.edge.bamgrid.com`；排在后面时 Hulu 规则完全空转，Hulu 走 Disney+ 组（默认香港）而 Hulu 只在美国可用。`Hulu_Domain` 里的 `112263.com`、`findyourlimits.com` 等在 geosite:disney 中也是作为 Hulu 条目出现的，前置不会截走 Disney 本身的域名。v2.9 起改正
+- **`HuluJP_Domain` 必须在 `Hulu_Domain` 与 `GEOSITE,disney` 之前**。日本 Hulu（`hulu.jp`、`happyon.jp`、`hjholdings.jp`、`streaks.jp` 等）需要日本 IP，归锚点组 `JPNet`（仅共用地区节点）。geosite:disney 含 `+.hulu.jp`，排在它后面永远命中不到；`hulu.jp` 以外的 5 个域名此前落进 `GlobalMedia_Domain`（Global TV）。v2.11 起
 - **⑩ 区 `category-games-!cn` 必须在 `category-entertainment` 之前**。后者收录了游戏分类的绝大部分条目（`category-games` 1123 条中 859 条），排在后面时本地游戏列表未收录的游戏域名（`epicgamescdn.com`、`diablo.com`、`ubistatic*-a.akamaihd.net` 等 353 条）落进 Global TV，Game Platform 切地区 / 直连时不跟着切。v2.9 起改正
 - **⑩ 区用 `category-games-!cn` 而不是 `category-games`**。`category-games` = `category-games-cn` ∪ `category-games-!cn`，cn 部分（`17173.com`、`4399.com`、`37.com` 等）不带 `@cn` 属性，⑤ 区的 `category-games@cn` 截不住，又因⑩早于⑫，会被带进 Game Platform（默认香港）。改用 `-!cn` 后 237 个国内游戏站交给 `China_Domain` / `GEOSITE,cn` 直连。该分类 v2fly 自 2025-06-05 起才有，路由器的 geosite.dat 早于此时整份配置会加载失败
-- **`ChinaMedia_Domain` 必须在 `GlobalMedia_Domain` 之后**，否则 `bilibili` / `qiyi` 关键字会把 B 站、爱奇艺国际版拉进 Domestic TV
+- **`ChinaMedia_Domain` 必须在 `GlobalMedia_Domain` 之后**，否则 `bilibili` / `qiyi` 关键字会把 B 站、爱奇艺国际版拉进 Domestic
 - **`SteamCN` 必须在 `Steam_Domain` 之前**，国区 Steam 走直连（`Steam_CDN_Domain` 已于 v2.4 摘除，被 `SteamCN_Domain` 完整覆盖）
 - **IP 区的 `Game_IP` 必须在 `Netflix_IP` 之后**，它的 /16 段包含 Netflix 的 39 个小段
 - **IP 区的 `Amazon_IP` 必须在 `Game_IP` / `Supercell_IP` / `Blizzard_IP` / `GlobalMedia_IP` 之后**。它是整个 AWS 地址段（挂 `Proxy`），/13~/15 大段包含这四者的大部分条目，前置会把游戏与流媒体流量整块吞进 `Proxy`。v1 时代 Amazon_IP 挂购物组、要求反过来排，已不适用
