@@ -33,6 +33,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 
 - **锚点之间不互相引用**。Clash 加载时会检测策略组循环引用并直接失败，`validate_ini.py` 里有对应的 DFS 检查
 - 锚点组末尾保留 `.*`，需要钉死某个具体节点（流媒体解锁）时在锚点层改一次即可
+- **同地区拆出组与原组一起出现**（v2.21 起）：平台组候选里有 `USNet` 必有 `USAlt`、有 `Proxy` 必有 `HKNet`，拆出组紧跟原组；`USNet` 锚点第二候选是 🇺🇸 US Alt 池。由 `validate_ini.py` 的 `PAIRED_GROUPS` 检查，用户自定义组除外。规则见 design-notes 第二节规则 6
 
 ---
 

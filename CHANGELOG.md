@@ -6,6 +6,17 @@
 
 ---
 
+## 2026-10-11 — v2.21
+
+新规则：因特殊需求拆出的同地区代理组必须与原组一起出现（用户 2026-10-11 指定，design-notes 第二节规则 6）。默认出口不变，只是多了候选。
+
+- 所有非自定义平台组：候选有 `USNet` 的紧跟着加 `USAlt`，有 `Proxy` 的紧跟着加 `HKNet`（共 53 处）
+- `USNet` 锚点第二候选加 🇺🇸 US Alt 池，与 `USAlt` 锚点的「US Alt + US Node」对称
+- `validate_ini.py` 新增检查 4a：`PAIRED_GROUPS = {'USNet': 'USAlt', 'Proxy': 'HKNet'}`，平台组缺拆出组即报 ERROR；锚点组与用户自定义组（Self-Hosted / Custom-Made / UnpopularNet / Bybit Global / PT）豁免
+- 自定义组按规则 4 未改候选
+
+---
+
 ## 2026-10-11 — v2.20
 
 为减少代理组做临时合并（策略组 66 → 55）。规则 1b 不改，合并以注释形式临时生效：cfg 原行以 `;【临时合并 v2.20】` 前缀注释保留，紧随其后是临时行，改回时删临时行、去掉前缀即可。默认出口全部不变。
