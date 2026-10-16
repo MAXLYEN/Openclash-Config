@@ -118,6 +118,11 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 不会循环：Rule 的 dedupe 收到通知时只出报告、不提交；Rule 的 build 只在
 `rules/list` 或 `scripts` 变化时触发。两边的密钥配置见 [操作流程.md](操作流程.md) 第 7 节。
 
+实机验证记录：
+
+- 2026-09-25 起已在真实 CI 中验证：Rule 构建 → `rules-updated` → Config 带 `--rule-ref <sha>` 校验；Config 推送改动 `dist/Custom_Clash_V2.ini` → 清两份 ini 缓存 → `RULE_DISPATCH_TOKEN` 自动发出 `config-updated` → Rule 的 dedupe 运行成功（v2.9 `daa096e`、v2.11 `f6da6ac`、v2.14 `a694d85` 多次复现，v2.14 那次基准是用户并发推送的提交）
+- **尚未验证**，下次自然发生时核对：Rule 的 `dedupe.yml` 在 apply 模式下真正推送了提交后，是否清缓存并发出 `rules-updated`（2026-09-25 那次 apply 运行没有可提交内容）
+
 ---
 
 ## 二、代理组拆分 / 合并规则
