@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-10-11T11:56:39+00:00",
+  "built_at": "2026-10-18T15:39:29+00:00",
   "files": {
     "Custom_Clash.ini": {
       "src_sha256": "e03706514f1186abd450f7538c0486e4eb4531ba7f6efd5c77da6acb412bae38",
@@ -12,11 +12,11 @@
       "groups": 57
     },
     "Custom_Clash_V2.ini": {
-      "src_sha256": "0c415d1f1408a232c9b41216a563b379f4853b7552250e0a8578474ae0de47d7",
+      "src_sha256": "ca1631281a371e0beefb3b8a32569ad24ab34dcf7da43c60777291aea06b2b6a",
       "dist_sha256": "784524a55ad6c9f669eac7cc4028b963bb9e2b4965f0d13c4ce8663f23d869cf",
-      "src_lines": 545,
+      "src_lines": 546,
       "dist_lines": 224,
-      "src_bytes": 52419,
+      "src_bytes": 52633,
       "dist_bytes": 22486,
       "rulesets": 166,
       "groups": 55,
