@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-10-25 — v2.23
+
+EU 并入 UK（用户 2026-10-25 指定）：欧洲规则默认走英国，策略组 55 → 54。改动以注释形式保留：cfg 原行以 `;【EU 并入 UK v2.23】` 前缀注释，紧随其后是新行，改回时删新行、去掉前缀即可。
+
+- `EUNet` 锚点第一候选由 🇩🇪 DE Node 改为 🇬🇧 UK Node：`EUNet_Domain`、`EUNet_IP`、`BybitEU_Domain` 默认走英国。规则区不动，仍指向 `EUNet`；要走欧洲时在面板里从 `EUNet` 末尾的 `.*` 选具体节点。**这是本版唯一的出口变化**
+- 🇩🇪 DE Node 节点池注释停用；家宽方案（本来就未启用）里的 🏠 DE Home 同样注释，`Residential` 候选去掉它
+- 16 个平台组去掉 `EUNet` 候选（与 `UKNet` 重复）：Netflix、Disney+、HBO、Global TV、Spotify、PrimeVideo、YouTube、AI、Cryptocurrency、Paypal、Meta、Snapchat、Speedtest、Shopping Platform、Steam、Custom-Made。`Custom-Made` 是用户自定义组，按用户指定作为规则 4 的例外一并修改
+- Bybit EU App 用英国 IP 可以登录（用户实测）
+- README、`architecture.md`、`design-notes.md` 同步
+
+---
+
 ## 2026-10-11 — v2.22
 
 按用户澄清修正 v2.21：只有 `USNet` 与 `USAlt` 成对，节点池与地区锚点组不动，自定义组也适用；Meta 默认出口改为 `USAlt`。

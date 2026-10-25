@@ -48,6 +48,7 @@ https://fastly.jsdelivr.net/gh/MAXLYEN/Openclash-Config@main/dist/Custom_Clash_V
 
 ```
 Layer 0  节点池（url-test）    🇭🇰 🇯🇵 🇸🇬 🇺🇸 🇬🇧 🇩🇪 🇦🇺 🇧🇷
+                                （🇩🇪 v2.23 起注释停用）
                                 唯一跟机场节点名打交道的一层
 
 Layer 1  地区锚点（select）    Proxy(HK) USNet JPNet SGNet UKNet EUNet AUNet BRNet
@@ -69,7 +70,7 @@ Layer 2  平台组（select）      Netflix / ChatGPT / Cryptocurrency / Steam /
 | `SGNet` | 新加坡，亚洲金融与虚拟币 |
 | `JPNet` | 日本，Netflix（含 fast.com）的默认出口与日本 Hulu；含无专用节点地区的挂靠（如菲律宾） |
 | `UKNet` | 英国，仅本地服务 |
-| `EUNet` | 欧洲 |
+| `EUNet` | 欧洲；v2.23 起默认走英国节点池，要走欧洲时在面板里从 `.*` 选具体节点 |
 | `AUNet` / `BRNet` | 大洋洲 / 南美 |
 
 详见 [docs/architecture.md](docs/architecture.md)。
