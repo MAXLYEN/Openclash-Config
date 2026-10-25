@@ -10,6 +10,7 @@
 Layer 0  节点池（url-test，正则匹配机场节点名）
          🇭🇰 HK Node / 🇯🇵 JP Node / 🇸🇬 SG Node / 🇺🇸 US Node
          🇬🇧 UK Node / 🇩🇪 DE Node / 🇦🇺 AU Node / 🇧🇷 BR Node
+         （🇩🇪 DE Node v2.23 起注释停用，见第二节 EUNet）
          🇺🇸 US Alt（fallback：RackNerd 优先，不可用时退回 🇺🇸 US Node）
          ↑ 唯一跟机场节点名打交道的一层。机场全量改名时只需要改这一层的正则
 
@@ -33,6 +34,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 
 - **锚点之间不互相引用**。Clash 加载时会检测策略组循环引用并直接失败，`validate_ini.py` 里有对应的 DFS 检查
 - 锚点组末尾保留 `.*`，需要钉死某个具体节点（流媒体解锁）时在锚点层改一次即可
+- **平台组不放 `EUNet`**（v2.23 起）：`EUNet` 默认即英国池，与 `UKNet` 重复；原候选行在 cfg 里以 `;【EU 并入 UK v2.23】` 前缀注释保留
 - **`USNet` 与 `USAlt` 同时出现**（v2.22 起）：凡能选 `USNet` 的平台组（含用户自定义组）都能选 `USAlt`，紧跟 `USNet`；节点池与锚点组不动。由 `validate_ini.py` 的 `PAIRED_GROUPS` 检查，规则见 design-notes 第二节规则 6
 
 ---
@@ -47,7 +49,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 | `SGNet` | 🇸🇬 SG | 新加坡，亚洲金融分流中心，亚洲虚拟币业务平台基本都走这里 |
 | `JPNet` | 🇯🇵 JP | 日本本地服务与日本 Hulu，以及 Netflix（含 `fast.com`）/ YouTube / Emby / 即时通讯的默认出口；**没有专用节点的地区统一挂靠这里**（如菲律宾，内容已并入 `JP_Domain`） |
 | `UKNet` | 🇬🇧 UK | 英国，**只放本地服务**（银行、Britbox、UK 媒体），不承担通用代理 |
-| `EUNet` | 🇩🇪 DE | 欧洲；Bybit EU App 的出口（EEA 用户归 Bybit EU，必须走欧洲） |
+| `EUNet` | 🇩🇪 DE → 🇬🇧 UK（v2.23） | 欧洲；Bybit EU App 的出口（EEA 用户归 Bybit EU，必须走欧洲）。v2.23 起默认英国池（用户 2026-10-25 指定，并实测英国 IP 可登录 Bybit EU），🇩🇪 DE 池注释停用；要走欧洲时在面板里从 `.*` 选具体节点 |
 | `AUNet` | 🇦🇺 AU | 大洋洲 |
 | `BRNet` | 🇧🇷 BR | 南美 |
 | `USAlt` | 🇺🇸 US Alt | 美国备用出口：只给常用美国节点被平台降级的服务用（首批 Meta AI），日常美国流量仍走 `USNet` |
@@ -77,19 +79,19 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 |---|---|---|
 | Disney+ / HBO / Global TV | `Proxy` | 港区内容库，低延迟；Apple TV+、Bahamut 临时并入 Global TV（v2.20 临时合并，见 design-notes 第二节） |
 | Netflix | `JPNet` | 默认日本；域名、IP 与 GEOSITE / GEOIP 兜底均归 Netflix 组，保留其他地区候选 |
-| PrimeVideo / Spotify | `USNet` | 美区服务；Spotify 各区价格不同，v2.17 补上 UK / EU / BR 候选 |
+| PrimeVideo / Spotify | `USNet` | 美区服务；Spotify 各区价格不同，v2.17 补上 UK / EU / BR 候选（v2.23 起 EU 去掉） |
 | Emby | `JPNet` | Emby 服务器在日本 |
 | YouTube / Instant Messaging | `JPNet` | 日本节点 |
 | AI | `USNet` | ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding 临时合为一个 AI 组（v2.20 临时合并，见 design-notes 第二节）；候选不含 `Proxy`，香港不在服务区 |
 | Meta | `USAlt` | Facebook / Instagram / WhatsApp / Threads 等（`Meta_Domain`、`GEOSITE,meta`、`GEOIP,facebook`），v2.17 从直挂 `USNet` 拆出，v2.22 默认改为 `USAlt`（第二候选 `USNet`）；Meta AI 由 ③ `USAlt_Domain` 直接走 `USAlt` |
 | TikTok / Twitter(X) / Snapchat / Shopping Platform | `USNet` | 美区服务 |
-| Paypal | `USNet` | 仅美 / 英 / 欧候选 |
+| Paypal | `USNet` | 仅美 / 英 / 欧候选（v2.23 起欧去掉） |
 | Cryptocurrency / Google | `SGNet` | 新加坡是亚洲金融分流中心；Crypto.com / OKX / Binance 临时并回 Cryptocurrency（v2.20 临时合并，见 design-notes 第二节）。Google 含 Google FCM（v2.16 并入） |
 | Shopee | `SGNet` | 东南亚 / 拉美多站点平台，候选另含 `BRNet`（巴西站）；v2.16 从 Shopping Platform 拆出 |
-| Bybit Global | `AUNet` | 候选只有 `AUNet` / `BRNet`：Bybit Global 限制美国、加拿大、中国大陆、香港、新加坡，日本逐步限制，欧洲（EEA）归 Bybit EU。不放 `Auto-Test`（可能选到受限地区节点）和 `Global Direct`（直连即中国大陆 IP）。Bybit EU 走 `EUNet` |
+| Bybit Global | `AUNet` | 候选只有 `AUNet` / `BRNet`：Bybit Global 限制美国、加拿大、中国大陆、香港、新加坡，日本逐步限制，欧洲（EEA）归 Bybit EU。不放 `Auto-Test`（可能选到受限地区节点）和 `Global Direct`（直连即中国大陆 IP）。Bybit EU 走 `EUNet`（v2.23 起默认英国池） |
 | Social Media | `Proxy` | 延迟优先，含 Telegram（v2.16 并入）；Meta 由更早的 Meta 组处理 |
 | GitHub / Microsoft / Apple / Speedtest | `Proxy` | 延迟优先 |
-| Game Platform / Steam | `Proxy` | 第二候选 `Global Direct`；Steam 各区定价不同，候选含全部 8 个地区锚点（v2.17 补齐 UK / EU / AU / BR） |
+| Game Platform / Steam | `Proxy` | 第二候选 `Global Direct`；Steam 各区定价不同，候选含全部 8 个地区锚点（v2.17 补齐 UK / EU / AU / BR；v2.23 起 EU 去掉） |
 | UnpopularNet / Others | `Proxy` | `UnpopularNet` 是给以后添加冷门地区节点预留的组；`Others` 即 `[]FINAL` 兜底 |
 | PT | `Global Direct` | PT 必须走本地出口 |
 | Domestic | `Global Direct` | 国区服务：网易云、小米、国内视频（v2.16 由 Netease / Xiaomi / Domestic TV 合并） |
