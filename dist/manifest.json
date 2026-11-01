@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-10-25T09:37:05+00:00",
+  "built_at": "2026-11-01T07:35:54+00:00",
   "files": {
     "Custom_Clash.ini": {
       "src_sha256": "e03706514f1186abd450f7538c0486e4eb4531ba7f6efd5c77da6acb412bae38",
@@ -12,15 +12,15 @@
       "groups": 57
     },
     "Custom_Clash_V2.ini": {
-      "src_sha256": "e46d7209445334183dd929b975673bed93f93f0a0d0b01be1f99bb4c6b12c84b",
-      "dist_sha256": "4cc9734b5f7bc56e00bb7cb6df9dc9a6d12afc855c1f06431006fbe8e07deb30",
-      "src_lines": 576,
-      "dist_lines": 223,
-      "src_bytes": 56068,
-      "dist_bytes": 22179,
-      "rulesets": 166,
+      "src_sha256": "c6d04c5bbac020339e3e7f3826449ee259e6365359ef2163ef1a5f1b95f402dd",
+      "dist_sha256": "a204ac8ddb7196fd36b51288721051220a01dde92cbd13acb9ff02981e5217dc",
+      "src_lines": 578,
+      "dist_lines": 224,
+      "src_bytes": 56315,
+      "dist_bytes": 22288,
+      "rulesets": 167,
       "groups": 54,
-      "debug_sha256": "41c417567571d0698c2a8e786365edbe1e4540f34750a6d9344853aedcaa6692"
+      "debug_sha256": "abe203855cfde0fa0709351d11e1a4e806bfde01ca4b13f938462de0d5b69fa1"
     }
   }
 }
