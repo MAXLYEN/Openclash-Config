@@ -163,7 +163,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 ③  强制代理/直连      Custom_Proxy → Custom-Made → Custom_Direct
     出口覆盖          （Residential，未启用）→ USAlt
 ④  拦截               Reject / HDOBOXAds / TalkatoneAds
-⑤  精确直连           Lan → GoogleCN → SteamCN
+⑤  精确直连           Lan → SteamCN
                       → games@cn → game-platforms-download
 ⑥  PT                 PT → public-tracker → PrivateTracker
 ⑦  泛直连             UK-wifi-call → Direct_Domain → Download
@@ -208,7 +208,7 @@ Meta 自 v2.17 起有独立的 `Meta` 组（v2.22 起默认 `USAlt`，第二候�
 保持前置的三类例外：
 
 1. `private` 内网
-2. 国内直连类：`google-cn`、`category-games@cn`、`category-game-platforms-download`、`category-public-tracker`
+2. 国内直连类：`category-games@cn`、`category-game-platforms-download`、`category-public-tracker`（`google-cn` 自 v2.25 起停用，避免向 Google 暴露国内 IP）
 3. `gfw` 与 `cn` 全局兜底（位于链尾，本身就是兜底）
 
 ---

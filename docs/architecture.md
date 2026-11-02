@@ -81,12 +81,12 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | Netflix | `JPNet` | 默认日本；域名、IP 与 GEOSITE / GEOIP 兜底均归 Netflix 组，保留其他地区候选 |
 | PrimeVideo / Spotify | `USNet` | 美区服务；Spotify 各区价格不同，v2.17 补上 UK / EU / BR 候选（v2.23 起 EU 去掉） |
 | Emby | `JPNet` | Emby 服务器在日本 |
-| YouTube / Instant Messaging | `JPNet` | 日本节点 |
-| AI | `USNet` | ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding 临时合为一个 AI 组（v2.20 临时合并，见 design-notes 第二节）；候选不含 `Proxy`，香港不在服务区 |
+| Instant Messaging | `JPNet` | 日本节点 |
+| AI / Google / YouTube | `USNet` | ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding 临时合为一个 AI 组（v2.20 临时合并，见 design-notes 第二节）；v2.25 起 Google（含 Google FCM）与 YouTube 也改为默认 `USNet` 并去掉 `Proxy`（香港）候选，保持 Google 全家桶与 AI 出口一致 |
 | Meta | `USAlt` | Facebook / Instagram / WhatsApp / Threads 等（`Meta_Domain`、`GEOSITE,meta`、`GEOIP,facebook`），v2.17 从直挂 `USNet` 拆出，v2.22 默认改为 `USAlt`（第二候选 `USNet`）；Meta AI 由 ③ `USAlt_Domain` 直接走 `USAlt` |
 | TikTok / Twitter(X) / Snapchat / Shopping Platform | `USNet` | 美区服务 |
 | Paypal | `USNet` | 仅美 / 英 / 欧候选（v2.23 起欧去掉） |
-| Cryptocurrency / Google | `SGNet` | 新加坡是亚洲金融分流中心；Crypto.com / OKX / Binance 临时并回 Cryptocurrency（v2.20 临时合并，见 design-notes 第二节）。Google 含 Google FCM（v2.16 并入） |
+| Cryptocurrency | `SGNet` | 新加坡是亚洲金融分流中心；Crypto.com / OKX / Binance 临时并回 Cryptocurrency（v2.20 临时合并，见 design-notes 第二节） |
 | Shopee | `SGNet` | 东南亚 / 拉美多站点平台，候选另含 `BRNet`（巴西站）；v2.16 从 Shopping Platform 拆出 |
 | Bybit Global | `AUNet` | 候选只有 `AUNet` / `BRNet`：Bybit Global 限制美国、加拿大、中国大陆、香港、新加坡，日本逐步限制，欧洲（EEA）归 Bybit EU。不放 `Auto-Test`（可能选到受限地区节点）和 `Global Direct`（直连即中国大陆 IP）。Bybit EU 走 `EUNet`（v2.23 起默认英国池） |
 | Social Media | `Proxy` | 延迟优先，含 Telegram（v2.16 并入）；Meta 由更早的 Meta 组处理 |

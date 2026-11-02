@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-11-02 — v2.25
+
+全面封堵 Google 账号向国内直连或香港暴露位置信号（用户 2026-11-02 指定，解决 Google 账号关联地区被判为 China 导致 Antigravity 报 `UNSUPPORTED_LOCATION`）：
+
+- ⑤ 精确直连区注释停用 `GoogleCN_Domain` 与 `[]GEOSITE,google-cn`（连同 v1 里的同名行一并注释），配合 Openclash-Rule 停用 `Direct_Domain` 中的 `clientservices.googleapis.com` / `update.googleapis.com` 及 `GoogleCN_Domain` 全部 16 条条目，使 Google 客户端状态同步、更新、静态资源与遥测全部落入 ⑧ 区 `Google_Domain` / `[]GEOSITE,google` 走代理，不再有任何 Google 流量直连暴露中国大陆 IP
+- `Google` 与 `YouTube` 策略组第一候选统一改为 `USNet`（紧跟 `USAlt`），并移除 `Proxy`（香港）候选，与 `AI` 组（Gemini / Antigravity）保持同一美国出口
+- `docs/architecture.md`、`docs/design-notes.md` 同步更新
+
+---
+
 ## 2026-11-01 — v2.24
 
 - IP 规则区新增引用 `Claude_IP`（Openclash-Rule `84a62d1` 将其由空占位转为正式规则集，收录 Anthropic 官方 IP 段 `160.79.104.0/21`、`2607:6bc0::/32` 与 `IP-ASN,399358` 共 3 条），排在平台专属段（`GoogleFCM_IP` 之后、`Telegram_IP` 之前，已注释的 `Copilot_IP` / `OpenAI_IP` 紧下方）。按 v2.20 临时合并约定挂 `AI` 组（默认 `USNet`），原组名 `Claude` 以 `;【临时合并 v2.20】` 注释行保留
