@@ -147,7 +147,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
 - **临时例外（v2.20 起，用户 2026-10-11 为减少代理组决定）**：规则 1b 文字不改，以下合并以注释形式临时生效，之后视情况改回。cfg 里原行以 `;【临时合并 v2.20】` 前缀注释保留，紧随其后的是临时行；改回时删临时行、去掉原行前缀，并按规则 6 给恢复的组补上 `USAlt`（IP 区已注释的 `Copilot_IP` / `OpenAI_IP` / `AppleAI_IP` 引用的是原组名，改回后才能取消注释）
   - ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding → `AI`
   - Crypto.com / OKX / Binance → `Cryptocurrency`；Nvidia → 直挂 `USNet`
-  - Bahamut / Apple TV+ → `Global TV`
+  - Apple TV+ → `Global TV`；Bahamut → 直挂 `HKNet`（v2.26 起由 `Global TV` 改挂 `HKNet`）
 - **EU 并入 UK（v2.23 起，用户 2026-10-25 决定）**：欧洲规则（`EUNet_Domain` / `EUNet_IP` / `BybitEU_Domain`）仍指向 `EUNet`，但 `EUNet` 第一候选改为 🇬🇧 UK Node，🇩🇪 DE Node 池与 🏠 DE Home 注释停用；平台组（含 `Custom-Made`）去掉 `EUNet` 候选。cfg 里原行以 `;【EU 并入 UK v2.23】` 前缀注释保留，紧随其后的是新行；改回时删新行、去掉原行前缀。用户实测英国 IP 可登录 Bybit EU App
 - 用户已拍板的个案：`Game Platform` 不按商店拆（Epic / EA / PSN / eShop 等价格随账号区，切代理改变不了）；`Ozon` 留在 `Shopping Platform`
 

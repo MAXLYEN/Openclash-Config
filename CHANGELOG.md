@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-11-02 — v2.26
+
+- 巴哈姆特动画疯（`Bahamut_Domain` 与 `[]GEOSITE,bahamut`）由临时合并组 `Global TV` 改归香港本地锚点 `HKNet`（用户 2026-11-02 指定「把动画疯的平台相关域名加到HK」）：`Bahamut_Domain`（`bahamut.com.tw`、`gamer.com.tw`、`bahamut.akamaized.net`、`hinet.net`、`viblast.com`）及 `GEOSITE,bahamut` 在 ⑧ 平台专属区直挂 `HKNet`，既保留先于 `GlobalMedia_Domain` 的首命中优先级，又固定走香港出口
+- 配合 Openclash-Rule 停用 `Custom_Proxy_Domain`（③ 区 `Proxy` 组，默认香港）中的 `google-analytics.com`、`googleanalytics.com`、`ssl-google-analytics.l.google.com`、`app-measurement.com`、`crashlyticsreports-pa.googleapis.com`、`recaptcha.net` 共 6 条规则，使其落入 ⑧ 区 `Google_Domain`（默认 `USNet`），堵死 `www.google-analytics.com` 等仍走香港的漏口
+- `docs/architecture.md`、`docs/design-notes.md` 同步更新
+
+---
+
 ## 2026-11-02 — v2.25
 
 全面封堵 Google 账号向国内直连或香港暴露位置信号（用户 2026-11-02 指定，解决 Google 账号关联地区被判为 China 导致 Antigravity 报 `UNSUPPORTED_LOCATION`）：

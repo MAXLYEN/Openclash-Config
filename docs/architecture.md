@@ -44,7 +44,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 | 锚点 | 节点池 | 承载内容 |
 |---|---|---|
 | `Proxy` | 🇭🇰 HK | 通用代理：GFW 兜底、强制代理（`Custom_Proxy` / `User_Domain`）、`Amazon_IP`、FINAL（`Others`）默认出口；平台组里的「香港」候选，主流流媒体（Disney+ / HBO）、社交、开发、游戏平台的默认出口 |
-| `HKNet` | 🇭🇰 HK | 香港本地：`HK_Domain`（港银行、券商、`.com.hk` 等）、`HK_IP`、`HK-wifi-call`。v2.16 从 `Proxy` 拆出，切换 `Proxy` 出口时香港本地服务仍走香港 |
+| `HKNet` | 🇭🇰 HK | 香港本地：`HK_Domain`（港银行、券商、`.com.hk` 等）、`HK_IP`、`HK-wifi-call`，以及巴哈姆特动画疯（`Bahamut_Domain` / `GEOSITE,bahamut`，v2.26 起直挂 `HKNet`）。v2.16 从 `Proxy` 拆出，切换 `Proxy` 出口时香港本地服务仍走香港 |
 | `USNet` | 🇺🇸 US | 美国，美区专属服务（美国 Hulu、Talkatone、Google Voice、Nvidia（临时）直接挂这里；PrimeVideo / Spotify / TikTok / X / Meta / 购物的默认出口）；美国本土金融与 VoIP；AI 平台组与 AI 兜底 `category-ai-!cn` 的默认出口 |
 | `SGNet` | 🇸🇬 SG | 新加坡，亚洲金融分流中心，亚洲虚拟币业务平台基本都走这里 |
 | `JPNet` | 🇯🇵 JP | 日本本地服务与日本 Hulu，以及 Netflix（含 `fast.com`）/ YouTube / Emby / 即时通讯的默认出口；**没有专用节点的地区统一挂靠这里**（如菲律宾，内容已并入 `JP_Domain`） |
@@ -77,7 +77,7 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 
 | 平台组 | 第一候选 | 依据 |
 |---|---|---|
-| Disney+ / HBO / Global TV | `Proxy` | 港区内容库，低延迟；Apple TV+、Bahamut 临时并入 Global TV（v2.20 临时合并，见 design-notes 第二节） |
+| Disney+ / HBO / Global TV | `Proxy` | 港区内容库，低延迟；Apple TV+ 临时并入 Global TV（v2.20 临时合并，见 design-notes 第二节；Bahamut 自 v2.26 起直挂 `HKNet`） |
 | Netflix | `JPNet` | 默认日本；域名、IP 与 GEOSITE / GEOIP 兜底均归 Netflix 组，保留其他地区候选 |
 | PrimeVideo / Spotify | `USNet` | 美区服务；Spotify 各区价格不同，v2.17 补上 UK / EU / BR 候选（v2.23 起 EU 去掉） |
 | Emby | `JPNet` | Emby 服务器在日本 |
