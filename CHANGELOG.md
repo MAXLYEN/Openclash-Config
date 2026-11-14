@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-11-13 — v2.27
+
+- IP 规则区在 `Lan_IP` 之后引用 Openclash-Rule `0e7ca9c` 发布的 `Custom-Made_IP`，归现有 `Custom-Made` 组。14 条单地址规则覆盖 115 访问入口、µTorrent 更新、迅雷登录与公共 BT DHT 引导节点；优先于其他公网平台和地区 IP 规则，内网直连保持优先
+
+---
+
 ## 2026-11-02 — v2.26
 
 - 巴哈姆特动画疯（`Bahamut_Domain` 与 `[]GEOSITE,bahamut`）由临时合并组 `Global TV` 改归香港本地锚点 `HKNet`（用户 2026-11-02 指定「把动画疯的平台相关域名加到HK」）：`Bahamut_Domain`（`bahamut.com.tw`、`gamer.com.tw`、`bahamut.akamaized.net`、`hinet.net`、`viblast.com`）及 `GEOSITE,bahamut` 在 ⑧ 平台专属区直挂 `HKNet`，既保留先于 `GlobalMedia_Domain` 的首命中优先级，又固定走香港出口
