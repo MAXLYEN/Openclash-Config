@@ -48,10 +48,10 @@ https://fastly.jsdelivr.net/gh/MAXLYEN/Openclash-Config@main/dist/Custom_Clash_V
 
 ```
 Layer 0  节点池（url-test）    🇭🇰 🇯🇵 🇸🇬 🇺🇸 🇬🇧 🇩🇪 🇦🇺 🇧🇷
-                                （🇩🇪 v2.23 起注释停用）
+                                （🇩🇪 v2.23、🇧🇷 v2.28 起注释停用）
                                 唯一跟机场节点名打交道的一层
 
-Layer 1  地区锚点（select）    Proxy(HK) USNet JPNet SGNet UKNet EUNet AUNet BRNet
+Layer 1  地区锚点（select）    Proxy(HK) HKNet USNet JPNet SGNet UKNet EUNet AUNet
                                 第一候选恒为对应节点池，全新配置无需手选
 
 Layer 2  平台组（select）      Netflix / ChatGPT / Cryptocurrency / Steam / ...
@@ -66,12 +66,12 @@ Layer 2  平台组（select）      Netflix / ChatGPT / Cryptocurrency / Steam /
 |---|---|
 | `Proxy` | 通用代理（GFW 兜底、强制代理、FINAL），默认香港节点；平台组里的「香港」候选 |
 | `HKNet` | 香港本地服务与香港 Wi-Fi 通话，与 `Proxy` 分开切换 |
-| `USNet` | 美国，美区专属服务（Hulu / PrimeVideo / Spotify 等）；AI 平台组的默认出口 |
+| `USNet` | 美国，美区专属服务（Hulu / PrimeVideo / Spotify 等）；AI 平台组的默认出口；v2.28 起承接巴西规则 |
 | `SGNet` | 新加坡，亚洲金融与虚拟币 |
 | `JPNet` | 日本，Netflix（含 fast.com）的默认出口与日本 Hulu；含无专用节点地区的挂靠（如菲律宾） |
 | `UKNet` | 英国，仅本地服务 |
 | `EUNet` | 欧洲；v2.23 起默认走英国节点池，要走欧洲时在面板里从 `.*` 选具体节点 |
-| `AUNet` / `BRNet` | 大洋洲 / 南美 |
+| `AUNet` | 大洋洲；`BRNet` 自 v2.28 起注释停用，南美规则迁到 `USNet` |
 
 详见 [docs/architecture.md](docs/architecture.md)。
 

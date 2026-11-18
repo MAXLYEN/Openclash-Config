@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-11-18 — v2.28
+
+- 按用户要求注释停用 `BRNet` 锚点和 `🇧🇷 BR Node` 节点池，`BR_Domain` 改归 `USNet`，规则位置保持不变
+- 11 个平台组将 `BRNet` 候选迁到 `USNet`，已有美国候选的合并重复项，保留 `USNet` / `USAlt` 配对。包含用户指定的自定义组 `Custom-Made`、`Bybit Global`；后者默认仍为 `AUNet`，美国属于其受限地区，新增美国候选是本轮用户指定的例外
+- 所有改动原行以 `;【BR 并入 US v2.28】` 注释保留，README、架构与设计说明同步更新
+
+---
+
 ## 2026-11-13 — v2.27
 
 - IP 规则区在 `Lan_IP` 之后引用 Openclash-Rule `0e7ca9c` 发布的 `Custom-Made_IP`，归现有 `Custom-Made` 组。14 条单地址规则覆盖 115 访问入口、µTorrent 更新、迅雷登录与公共 BT DHT 引导节点；优先于其他公网平台和地区 IP 规则，内网直连保持优先

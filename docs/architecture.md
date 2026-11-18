@@ -10,12 +10,12 @@
 Layer 0  节点池（url-test，正则匹配机场节点名）
          🇭🇰 HK Node / 🇯🇵 JP Node / 🇸🇬 SG Node / 🇺🇸 US Node
          🇬🇧 UK Node / 🇩🇪 DE Node / 🇦🇺 AU Node / 🇧🇷 BR Node
-         （🇩🇪 DE Node v2.23 起注释停用，见第二节 EUNet）
+         （🇩🇪 DE Node v2.23、🇧🇷 BR Node v2.28 起注释停用，见第二节）
          🇺🇸 US Alt（fallback：RackNerd 优先，不可用时退回 🇺🇸 US Node）
          ↑ 唯一跟机场节点名打交道的一层。机场全量改名时只需要改这一层的正则
 
 Layer 1  地区锚点（select，第一候选 = 对应节点池，末尾带 .*）
-         Proxy(HK) / HKNet / USNet / JPNet / SGNet / UKNet / EUNet / AUNet / BRNet
+         Proxy(HK) / HKNet / USNet / JPNet / SGNet / UKNet / EUNet / AUNet
          USAlt（美国备用出口，见第六节）
          ↑ 常驻节点组，也是没有专用节点的地区的挂靠落点
 
@@ -35,6 +35,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 - **锚点之间不互相引用**。Clash 加载时会检测策略组循环引用并直接失败，`validate_ini.py` 里有对应的 DFS 检查
 - 锚点组末尾保留 `.*`，需要钉死某个具体节点（流媒体解锁）时在锚点层改一次即可
 - **平台组不放 `EUNet`**（v2.23 起）：`EUNet` 默认即英国池，与 `UKNet` 重复；原候选行在 cfg 里以 `;【EU 并入 UK v2.23】` 前缀注释保留
+- **BR 并入 US**（v2.28 起）：`BRNet` 与 `🇧🇷 BR Node` 注释停用，`BR_Domain` 归 `USNet`，平台组的巴西候选迁到美国并合并重复项；原行以 `;【BR 并入 US v2.28】` 前缀注释保留
 - **`USNet` 与 `USAlt` 同时出现**（v2.22 起）：凡能选 `USNet` 的平台组（含用户自定义组）都能选 `USAlt`，紧跟 `USNet`；节点池与锚点组不动。由 `validate_ini.py` 的 `PAIRED_GROUPS` 检查，规则见 design-notes 第二节规则 6
 
 ---
@@ -51,7 +52,7 @@ Layer 2  平台组（select，候选 = 锚点组，第一个 = 该平台默认�
 | `UKNet` | 🇬🇧 UK | 英国，**只放本地服务**（银行、Britbox、UK 媒体），不承担通用代理 |
 | `EUNet` | 🇩🇪 DE → 🇬🇧 UK（v2.23） | 欧洲；Bybit EU App 的出口（EEA 用户归 Bybit EU，必须走欧洲）。v2.23 起默认英国池（用户 2026-10-25 指定，并实测英国 IP 可登录 Bybit EU），🇩🇪 DE 池注释停用；要走欧洲时在面板里从 `.*` 选具体节点 |
 | `AUNet` | 🇦🇺 AU | 大洋洲 |
-| `BRNet` | 🇧🇷 BR | 南美 |
+| `BRNet`（停用） | 🇧🇷 BR（停用） | v2.28 起锚点与节点池注释保留，南美 `BR_Domain` 改归 `USNet` |
 | `USAlt` | 🇺🇸 US Alt | 美国备用出口：只给常用美国节点被平台降级的服务用（首批 Meta AI），日常美国流量仍走 `USNet` |
 
 `Proxy` 保留原名而没有改成 `HKNet`，因为它同时承担「通用代理入口」的角色，很多平台组的第二候选指向它。v2.16 另建 `HKNet` 只放香港本地规则，`Proxy` 专做通用代理；平台组里的「香港」候选仍写 `Proxy`。
@@ -79,7 +80,7 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 |---|---|---|
 | Disney+ / HBO / Global TV | `Proxy` | 港区内容库，低延迟；Apple TV+ 临时并入 Global TV（v2.20 临时合并，见 design-notes 第二节；Bahamut 自 v2.26 起直挂 `HKNet`） |
 | Netflix | `JPNet` | 默认日本；域名、IP 与 GEOSITE / GEOIP 兜底均归 Netflix 组，保留其他地区候选 |
-| PrimeVideo / Spotify | `USNet` | 美区服务；Spotify 各区价格不同，v2.17 补上 UK / EU / BR 候选（v2.23 起 EU 去掉） |
+| PrimeVideo / Spotify | `USNet` | 美区服务；Spotify 各区价格不同，v2.17 补上 UK / EU / BR 候选（v2.23 起 EU 去掉，v2.28 起 BR 并入 US） |
 | Emby | `JPNet` | Emby 服务器在日本 |
 | Instant Messaging | `JPNet` | 日本节点 |
 | AI / Google / YouTube | `USNet` | ChatGPT / Copilot / Claude / Gemini / Apple AI / AI Coding 临时合为一个 AI 组（v2.20 临时合并，见 design-notes 第二节）；v2.25 起 Google（含 Google FCM）与 YouTube 也改为默认 `USNet` 并去掉 `Proxy`（香港）候选，保持 Google 全家桶与 AI 出口一致 |
@@ -87,11 +88,11 @@ Clash 的 `select` 组在没有选择记录时使用**第一个候选**。改造
 | TikTok / Twitter(X) / Snapchat / Shopping Platform | `USNet` | 美区服务 |
 | Paypal | `USNet` | 仅美 / 英 / 欧候选（v2.23 起欧去掉） |
 | Cryptocurrency | `SGNet` | 新加坡是亚洲金融分流中心；Crypto.com / OKX / Binance 临时并回 Cryptocurrency（v2.20 临时合并，见 design-notes 第二节） |
-| Shopee | `SGNet` | 东南亚 / 拉美多站点平台，候选另含 `BRNet`（巴西站）；v2.16 从 Shopping Platform 拆出 |
-| Bybit Global | `AUNet` | 候选只有 `AUNet` / `BRNet`：Bybit Global 限制美国、加拿大、中国大陆、香港、新加坡，日本逐步限制，欧洲（EEA）归 Bybit EU。不放 `Auto-Test`（可能选到受限地区节点）和 `Global Direct`（直连即中国大陆 IP）。Bybit EU 走 `EUNet`（v2.23 起默认英国池） |
+| Shopee | `SGNet` | 东南亚 / 拉美多站点平台，v2.16 从 Shopping Platform 拆出；v2.28 起巴西候选并入已有的 `USNet` / `USAlt` |
+| Bybit Global | `AUNet` | v2.28 按用户要求将 `BRNet` 候选迁到 `USNet` / `USAlt`，默认仍为澳洲。美国属于其受限地区，选择美国候选前需自行确认可用性；这是本轮指定的例外。不放 `Auto-Test` 和 `Global Direct`。Bybit EU 仍走 `EUNet`（v2.23 起默认英国池） |
 | Social Media | `Proxy` | 延迟优先，含 Telegram（v2.16 并入）；Meta 由更早的 Meta 组处理 |
 | GitHub / Microsoft / Apple / Speedtest | `Proxy` | 延迟优先 |
-| Game Platform / Steam | `Proxy` | 第二候选 `Global Direct`；Steam 各区定价不同，候选含全部 8 个地区锚点（v2.17 补齐 UK / EU / AU / BR；v2.23 起 EU 去掉） |
+| Game Platform / Steam | `Proxy` | 第二候选 `Global Direct`；Steam 各区定价不同，v2.17 补齐 UK / EU / AU / BR 候选，v2.23 起 EU 去掉，v2.28 起 BR 并入 US |
 | UnpopularNet / Others | `Proxy` | `UnpopularNet` 是给以后添加冷门地区节点预留的组；`Others` 即 `[]FINAL` 兜底 |
 | PT | `Global Direct` | PT 必须走本地出口 |
 | Domestic | `Global Direct` | 国区服务：网易云、小米、国内视频（v2.16 由 Netease / Xiaomi / Domestic TV 合并） |

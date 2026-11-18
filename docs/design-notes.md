@@ -135,7 +135,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
    - c. 没有专用节点的地区 → 挂靠最近锚点（菲律宾 → `JPNet`，内容并入 `JP_Domain`）
 2. **拆分**：一个组里混着「地区需求不同」的服务时拆开（`HKNet` 从 `Proxy` 拆出、`Shopee` 从 `Shopping Platform` 拆出）
 3. **合并**：候选列表相同不是合并理由；只有切地区对这些服务都没有意义时才合并，并且由用户逐个拍板（已拍板：网易云 / 小米 / 国内视频 → `Domestic`，Google FCM → `Google`，Telegram → `Social Media`）
-4. **不动**：用户自定义的组不拆、不并、不改候选 —— `Self-Hosted`、`Custom-Made`、`UnpopularNet`（给以后的冷门地区节点预留）、`USAlt`、`Bybit Global`、`PT`。例外：v2.23 按用户指定，`Custom-Made` 的 `EUNet` 候选随「EU 并入 UK」一并去掉
+4. **不动**：用户自定义的组不拆、不并、不改候选 —— `Self-Hosted`、`Custom-Made`、`UnpopularNet`（给以后的冷门地区节点预留）、`USAlt`、`Bybit Global`、`PT`。例外：v2.23 按用户指定，`Custom-Made` 的 `EUNet` 候选随「EU 并入 UK」一并去掉；v2.28 按用户要求将所有 BR 连接迁到 US，`Custom-Made`、`Bybit Global` 的 `BRNet` 候选也迁到 `USNet`（按规则 6 配对 `USAlt`）
 6. **`USNet` 与 `USAlt` 同时出现**（用户 2026-10-11 指定）：凡能选 `USNet` 的平台组都必须也能选 `USAlt`，`USAlt` 紧跟 `USNet`；**用户自定义组也适用**（规则 4 的「不改候选」在这一条上让位）。节点池与地区锚点组不动。`HKNet` 不与 `Proxy` 成对。由 `validate_ini.py` 的 `PAIRED_GROUPS` 强制检查
 7. **记录**：以本节为准；每次拆 / 并在 cfg 对应行写原因、记 CHANGELOG，并同步 `architecture.md` 第四节
 
@@ -150,6 +150,7 @@ push 与定时任务不带该参数，校验的仍是镜像本身的真实可用
   - Apple TV+ → `Global TV`；Bahamut → 直挂 `HKNet`（v2.26 起由 `Global TV` 改挂 `HKNet`）
 - **EU 并入 UK（v2.23 起，用户 2026-10-25 决定）**：欧洲规则（`EUNet_Domain` / `EUNet_IP` / `BybitEU_Domain`）仍指向 `EUNet`，但 `EUNet` 第一候选改为 🇬🇧 UK Node，🇩🇪 DE Node 池与 🏠 DE Home 注释停用；平台组（含 `Custom-Made`）去掉 `EUNet` 候选。cfg 里原行以 `;【EU 并入 UK v2.23】` 前缀注释保留，紧随其后的是新行；改回时删新行、去掉原行前缀。用户实测英国 IP 可登录 Bybit EU App
 - 用户已拍板的个案：`Game Platform` 不按商店拆（Epic / EA / PSN / eShop 等价格随账号区，切代理改变不了）；`Ozon` 留在 `Shopping Platform`
+- **BR 并入 US（v2.28 起，用户 2026-11-18 决定）**：注释停用 `BRNet` 锚点与 `🇧🇷 BR Node` 池，`BR_Domain` 在原规则位置改归 `USNet`；所有启用的平台组将 `BRNet` 候选迁到 `USNet` 并合并重复项，含 `Custom-Made`、`Bybit Global`。`Bybit Global` 默认仍是 `AUNet`，新增 `USNet` / `USAlt` 为用户指定的例外，美国仍属于该平台受限地区。原行以 `;【BR 并入 US v2.28】` 注释保留，恢复时先恢复池和锚点，再恢复规则与候选
 
 ---
 
